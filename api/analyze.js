@@ -73,7 +73,15 @@ Exactamente: 5 comparables, 6 factores, 12 meses tendencia, 6 zonas.`;
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error en api/analyze:", error);
+
+    if (error?.response) {
+      console.log("Respuesta de error OpenAI:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+      });
+    }
+
     return res.status(500).json({ error: "Error al generar el análisis. Intenta de nuevo." });
   }
 }
