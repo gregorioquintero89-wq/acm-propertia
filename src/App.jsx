@@ -22,14 +22,109 @@ const C = {
 
 const CIUDADES = ["Bogotá","Medellín","Cali","Barranquilla","Cartagena","Bucaramanga","Pereira","Manizales"]
 const BARRIOS = {
-  "Bogotá":       ["Chapinero","Usaquén","El Chico","Rosales","Santa Bárbara","Teusaquillo","Cedritos","Niza","Salitre","Quinta Camacho"],
-  "Medellín":     ["El Poblado","Laureles","Envigado","Sabaneta","Belén","El Tesoro","Robledo","Estadio"],
-  "Cali":         ["Ciudad Jardín","Granada","El Peñón","Versalles","Unicentro","Chipichape","Aguacatal"],
-  "Barranquilla": ["El Prado","Country","Golf","Buenavista","Alto Prado","Miramar"],
-  "Cartagena":    ["Bocagrande","Manga","Castillogrande","El Laguito","Getsemaní"],
-  "Bucaramanga":  ["Cabecera","Lagos","La Cumbre","Álvarez","San Alonso"],
-  "Pereira":      ["Pinares","Álamos","Circunvalar","Cerritos","El Jardín"],
-  "Manizales":    ["Chipre","Cable","Palermo","Los Cedros","La Enea"],
+  "Bogotá": [
+    "Usaquén","Santa Bárbara","Cedritos","Niza","Chicó","El Retiro","La Cabrera","Rosales",
+    "El Chico","Chapinero","Quinta Camacho","El Lago","Teusaquillo","La Soledad","Palermo",
+    "Galerías","Modelia","Normandía","El Salitre","Ciudad Salitre","Fontibón","Engativá",
+    "Álamos","Quirinal","La Floresta","Niza Sur","Colina Campestre","San José de Bavaria",
+    "Britalia","El Prado","Gilmar","Lisboa","Santa Helenita","Bolivia","Cantalejo",
+    "Belmira","Madelena","Villa Alsacia","Versalles","Marsella","Kennedy","Américas",
+    "Alamos Norte","Tintal","Hayuelos","Bosa","Ciudad Bolívar","Usme","San Cristóbal",
+    "Rafael Uribe","Antonio Nariño","Puente Aranda","Los Mártires","La Candelaria",
+    "Santa Fe","La Perseverancia","El Minuto de Dios","Bachué","Garcés Navas",
+    "Pontevedra","El Cortijo","Villa Luz","Boyacá Real","Patio Bonito","Castilla",
+    "Timiza","Gran Britalia","Carvajal","Candelaria La Nueva","Lucero","Meissen",
+    "San Francisco","El Tesoro","Arborizadora","San Isidro Patios","Juan Rey",
+    "Parque Entrenubes","Marichuela","Yomasa","Alfonso López","El Poblado"
+  ],
+  "Medellín": [
+    "El Poblado","Laureles","Envigado","Sabaneta","Belén","El Tesoro","Robledo","Estadio",
+    "La América","San Javier","Castilla","Doce de Octubre","Aranjuez","Manrique","Santa Cruz",
+    "Popular","Villa Hermosa","Buenos Aires","La Candelaria","Guayabal","Itagüí","La Estrella",
+    "Caldas","Bello","Copacabana","Girardota","Barbosa","El Escobero","El Retiro","La Ceja",
+    "Llanogrande","Las Palmas","El Chinguí","Loma de Los Bernal","Altavista","San Antonio de Prado",
+    "La Tablaza","Ciudad del Río","Oviedo","El Centro","Parque Lleras","Provenza",
+    "Manila","Astorga","Los Balsos","El Diamante","San Lucas","Las Lomas","Alejandría",
+    "Conquistadores","Los Colores","Calasanz","Suramericana","Floresta","Santa Lucía",
+    "Caribe","Sevilla","Bermejal","Campo Valdés","Bermejal Los Álamos","Cruz Blanca",
+    "El Raizal","El Pinal","Enciso","Sucre","El Compromiso","Villatina","Batallón Girardot",
+    "Miraflores","Simón Bolívar","Bomboná","Trinidad","Perpetuo Socorro","Barrio Colón",
+    "Estación Villa","San Benito","Tenche","Toscana","Calasanz Parte Alta","La Cumbre",
+    "Independencias","Nuevos Conquistadores","El Corazón","Blanquizal","Santa Rosa de Lima"
+  ],
+  "Cali": [
+    "Terrón Colorado","Vista Hermosa","Aguacatal","Santa Rita","Santa Teresita","Arboledas",
+    "Normandía","Juanambú","Centenario","Granada","Versalles","San Vicente","Santa Mónica",
+    "Prados del Norte","La Flora","La Campiña","El Bosque","Menga","Chipichape",
+    "El Peñón","San Antonio","San Cayetano","Los Libertadores","La Merced","El Calvario",
+    "San Pedro","San Nicolás","El Piloto","Jorge Isaacs","Santander","Las Delicias",
+    "Salomia","Fátima","La Esmeralda","Bolivariano","San Luís","Petecuy","Los Guaduales",
+    "Ciudadela Floralia","Puerto Mallarino","Los Pinos","San Marino","La Floresta",
+    "Benjamín Herrera","Las Américas","Santa Fe","Chapinero","Alameda","Bretaña","Junín",
+    "El Dorado","El Guabal","La Libertad","Las Acacias","Santo Domingo","Olímpico",
+    "Pasoancho","Panamericano","San Cristóbal","Maracaibo","La Independencia","Aguablanca",
+    "Prados de Oriente","Los Sauces","León XIII","Los Conquistadores","La Gran Colombia",
+    "San Benito","Primavera","Villanueva","Eduardo Santos","El Paraíso","Bello Horizonte",
+    "El Poblado I","El Poblado II","Villa del Lago","Los Robles","Charco Azul","Calipso",
+    "Ciudad Córdoba","Mojica","Mariano Ramos","Antonio Nariño","Ciudad 2000","La Alborada",
+    "Ciudadela Comfandi","Ciudad Jardín","Ciudad Universitaria","Club Campestre","Canay",
+    "El Ingenio","El Limonar","Bosques del Limonar","Unicentro Cali","Ciudadela Pasoancho",
+    "Prados del Limonar","Buenos Aires","Meléndez","Los Farallones","Prados del Sur",
+    "Colinas del Sur","El Jordán","El Lido","Tequendama","San Fernando Nuevo","Santa Isabel",
+    "Bellavista","San Fernando Viejo","Miraflores","El Cedro","Los Cambulos","Santa Bárbara",
+    "Cañaveral","El Cortijo","Belisario Caicedo","Siloé","Belén","Tierra Blanca","Desepaz",
+    "Potrero Grande","Valle Grande","La Sultana","Uribe Uribe","Simón Bolívar","El Trébol",
+    "Puerto Nuevo","El Estero","Ciudad Capri","La Hacienda","El Gran Limonar","San Joaquín"
+  ],
+  "Barranquilla": [
+    "El Prado","Country Club","Golf","Buenavista","Alto Prado","Miramar","El Recreo",
+    "Riomar","Villa Country","Los Alpes","Paraíso","La Cumbre","Pradomar","El Limoncito",
+    "Altos del Prado","Villa Santos","Ciudad Jardín","Urbanización Cañaveral","Granadillo",
+    "Boston","Bellavista","El Tabor","Las Nieves","Barrio Abajo","San Isidro","La Manga",
+    "Modelo","San José","El Rosario","La Concepción","Simón Bolívar","La Luz","Kennedy",
+    "Los Nogales","San Salvador","Santa Helena","Las Palmas","El Silencio","Ciudadela 20 de Julio",
+    "Villa del Este","Las Américas","Los Olivos","La Floresta","Santodomingo","Los Laureles",
+    "El Carmen","Nueva Granada","El Brillante","Lipaya","Nuevo Horizonte","Las Gardenias",
+    "La Esmeralda","San Pedro Alejandrino","Las Malvinas","El Ferry","Rebolo","Montes",
+    "Villate","La Ceiba","San Roque","Barranquillita","El Boliche","Chiquinquirá","Lucero"
+  ],
+  "Cartagena": [
+    "Bocagrande","Manga","Castillogrande","El Laguito","Getsemaní","El Centro","La Matuna",
+    "Pie de la Popa","La Popa","Marbella","El Cabrero","Crespo","Chambacú","Torices",
+    "El Espinal","San Francisco","Ternera","Villa Rosita","Blas de Lezo","La Boquilla",
+    "Barrio Chino","Los Ejecutivos","La Castellana","Santa Lucía","El Recreo","Zaragocilla",
+    "Daniel Lemaitre","Armenia","El Pozón","Nelson Mandela","Olaya Herrera","San José de los Campanos",
+    "Urbanización La Plazuela","Pie del Cerro","San Diego","Santa Ana","El Silencio",
+    "Los Calamares","Amberes","Villa Estrella","Nazareno","La María","Nuevo Bosque",
+    "Lomas del Peyé","El Campestre","Villa Venecia","Portal de Zaragocilla"
+  ],
+  "Bucaramanga": [
+    "Cabecera del Llano","Lagos del Cacique","La Cumbre","Álvarez","San Alonso","Antonia Santos",
+    "El Prado","García Rovira","Provenza","La Aurora","El Jardín","Sotomayor","Mejoras Públicas",
+    "Comuneros","La Concordia","Chapinero","San Francisco","Villa Luz","La Rosita","Ciudadela Real de Minas",
+    "El Centro","La Concordia","Mutis","San Martín","Conucos","Bucarica","La Feria",
+    "Girón","Floridablanca","Piedecuesta","Ruitoque","Cañaveral","El Bosque","Los Comuneros",
+    "Santa Elena","La Victoria","Diamante","Portal de Cabecera","La Joya","San Rafael",
+    "La Fuente","Balcones de Provenza","El Reposo","Ricaurte","La Trinidad","Modelo"
+  ],
+  "Pereira": [
+    "Pinares","Álamos","Circunvalar","Cerritos","El Jardín","Villa del Prado","Belmonte",
+    "El Nogal","La Julita","Cuba","El Poblado","San Joaquín","Boston","Olímpica",
+    "El Centro","Villavicencio","Ciudad Boquía","Tokio","El Dorado","Risaralda",
+    "Ciudadela del Café","Panorama","Las Brisas","Santa Elena","Villa Santana",
+    "San Nicolás","Maraya","La Camelia","Jardín","El Retiro","Berlín","Samaria",
+    "La Dulcera","Corales","El Otoño","Kennedy","Los Alpes","Nuevo Horizonte",
+    "Villa Carola","El Vergel","Perla del Otún","La Esperanza","La Florida"
+  ],
+  "Manizales": [
+    "Chipre","Cable","Palermo","Los Cedros","La Enea","Milán","La Sultana","El Bosque",
+    "Aranjuez","Versalles","Palogrande","Belén","La Fuente","San Marcel","Lleras",
+    "La Estancia","Colinas del Norte","La Carola","Asunción","La Linda","Laureles",
+    "Los Cámbulos","El Rosario","San Ignacio","El Campestre","Los Alcázares",
+    "Samaria","La Violeta","Frailes","La Cumbre","El Triángulo","Ciudadela del Norte",
+    "Marmato","La Rambla","San Germán","Villa Pilar","Palogrande Norte","El Nevado",
+    "Fátima","Villa del Río","Santander","Los Ángeles","San Antonio","La Enea Norte"
+  ]
 }
 
 const fmt   = n => new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n)
