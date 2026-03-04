@@ -46,25 +46,30 @@ Responde SOLO con JSON (sin markdown):
 Exactamente: 5 comparables, 6 factores, 12 meses tendencia, 6 zonas.`;
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
+        max_tokens: 2000,
+        temperature: 0.2,
       }),
     });
 
-    if (!response.ok) throw new Error("Anthropic API error");
+    if (!response.ok) throw new Error("OpenAI API error");
 
     const data = await response.json();
-    const text = data.content?.map(b => b.text || "").join("") || "";
-    const result = JSON.parse(text.replace(/```json|```/g, "").trim());
+    const rawText =
+      data.choices?.[0]?.message?.content ||
+      data.choices?.[0]?.message?.content?.[0]?.text ||
+      "";
+
+    const cleanedText = rawText.replace(/```json|```/g, "").trim();
+    const result = JSON.parse(cleanedText);
 
     return res.status(200).json(result);
   } catch (error) {
