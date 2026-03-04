@@ -70,7 +70,6 @@ Exactamente: 5 comparables, 6 factores, 12 meses tendencia, 6 zonas.`;
         model: "gpt-4o-search-preview",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2000,
-        temperature: 0.2,
       }),
     });
 
