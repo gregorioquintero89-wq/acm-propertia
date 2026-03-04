@@ -127,6 +127,11 @@ const BARRIOS = {
   ]
 }
 
+// Ordenar alfabéticamente los barrios por ciudad
+Object.keys(BARRIOS).forEach(ciudad => {
+  BARRIOS[ciudad].sort((a, b) => a.localeCompare(b, "es-CO", { sensitivity: "base" }))
+})
+
 const fmt   = n => new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n)
 const fmtM2 = n => `${new Intl.NumberFormat("es-CO",{maximumFractionDigits:0}).format(n)} /m²`
 
@@ -162,6 +167,73 @@ const Sel = ({ value, onChange, options, placeholder }) => (
     {options.map(o => <option key={o.v||o} value={o.v||o} style={{ background:C.bg3 }}>{o.l||o}</option>)}
   </select>
 )
+
+const SearchSelect = ({ value, onChange, options, placeholder = "Busca barrio...", disabled }) => {
+  const [query, setQuery] = useState("")
+  const [open, setOpen] = useState(false)
+
+  const list = Array.isArray(options) ? options : []
+  const normalizedQuery = query.trim().toLowerCase()
+  const filtered = (normalizedQuery
+    ? list.filter(b => b.toLowerCase().includes(normalizedQuery))
+    : list
+  ).slice(0, 25)
+
+  const handleSelect = (val) => {
+    onChange(val)
+    setQuery(val)
+    setOpen(false)
+  }
+
+  return (
+    <div style={{ position:"relative" }}>
+      <input
+        value={disabled ? "" : (query || value || "")}
+        onChange={e => { setQuery(e.target.value); setOpen(true) }}
+        onFocus={() => !disabled && setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        placeholder={disabled ? "Primero elige ciudad" : placeholder}
+        disabled={disabled}
+        style={{
+          width:"100%", padding:"11px 14px", borderRadius:8,
+          border:`1px solid ${value ? C.green+"60" : C.border}`,
+          fontSize:14, color: disabled ? C.gray : (value ? C.white : C.gray),
+          background: C.bg3, outline:"none",
+          cursor: disabled ? "not-allowed" : "text",
+          transition:"border .2s"
+        }}
+      />
+      {open && !disabled && filtered.length > 0 && (
+        <div style={{
+          position:"absolute", top:"100%", left:0, right:0, marginTop:4,
+          maxHeight:200, overflowY:"auto", background:C.bg3, borderRadius:8,
+          border:`1px solid ${C.border}`, boxShadow:"0 10px 30px rgba(0,0,0,0.6)", zIndex:20
+        }}>
+          {filtered.map(b => (
+            <div
+              key={b}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleSelect(b)}
+              style={{
+                padding:"8px 12px", fontSize:13.5,
+                cursor:"pointer",
+                color: b === value ? C.green : C.white,
+                background: b === value ? C.bg2 : "transparent"
+              }}
+            >
+              {b}
+            </div>
+          ))}
+          {filtered.length === 25 && (
+            <div style={{ padding:"6px 12px", fontSize:11, color:C.gray }}>
+              Sigue escribiendo para afinar la búsqueda…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const Inp = ({ value, onChange, type = "text", placeholder, unit }) => (
   <div style={{ position:"relative" }}>
@@ -298,8 +370,25 @@ const P1 = ({ f, s }) => {
     <div>
       <PhaseTitle icon="📍" title="Ubicación y Categoría" sub="¿Dónde está la propiedad y qué tipo es?"/>
       <div style={{ display:"grid", gap:18 }}>
-        <div><Label req>Ciudad</Label><Sel value={f.ciudad} onChange={v => s({...f,ciudad:v,barrio:""})} options={CIUDADES} placeholder="Selecciona ciudad"/></div>
-        <div><Label req>Zona / Barrio</Label><Sel value={f.barrio} onChange={v => s({...f,barrio:v})} options={barrios} placeholder={f.ciudad ? "Selecciona barrio" : "Primero elige ciudad"}/></div>
+        <div>
+          <Label req>Ciudad</Label>
+          <Sel
+            value={f.ciudad}
+            onChange={v => s({ ...f, ciudad:v, barrio:"" })}
+            options={CIUDADES}
+            placeholder="Selecciona ciudad"
+          />
+        </div>
+        <div>
+          <Label req>Zona / Barrio</Label>
+          <SearchSelect
+            value={f.barrio}
+            onChange={v => s({ ...f, barrio:v })}
+            options={barrios}
+            placeholder="Escribe el nombre del barrio"
+            disabled={!f.ciudad}
+          />
+        </div>
         <GridSel label="Tipo de propiedad *" value={f.tipo} onChange={v => s({...f,tipo:v})} cols={3} items={[
           {v:"Apartamento",l:"Apartamento",icon:"🏢"},{v:"Casa",l:"Casa",icon:"🏠"},{v:"Lote",l:"Lote",icon:"🌿"},
           {v:"Comercial",l:"Comercial",icon:"🏪"},{v:"Oficina",l:"Oficina",icon:"💼"},{v:"Bodega",l:"Bodega",icon:"🏭"}
