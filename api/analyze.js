@@ -7,6 +7,20 @@ export default async function handler(req, res) {
   const prompt = `Eres un experto tasador inmobiliario colombiano con 20 años de experiencia. 
 Genera un ACM profesional con datos REALISTAS y PRECISOS para el mercado colombiano 2024-2025.
 
+Antes de calcular nada, usa las herramientas de búsqueda web disponibles en el modelo para consultar precios REALES y RECIENTES de propiedades comparables en las siguientes plataformas inmobiliarias para la ciudad y barrio específicos de la propiedad objetivo:
+- fincaraiz.com.co
+- metrocuadrado.com
+- ciencuadras.com
+- inmuebles24.com
+- properati.com.co
+- lamudi.com.co
+
+Debes:
+- Buscar listados activos o recientes de propiedades SIMILARES (mismo tipo, ciudad, barrio/zona cercana, rango de área y estrato).
+- Calcular precios por m² a partir de esos listados reales.
+- Basar el precio_m2_base, precio_mercado, precio_oportunidad, precio_aspiracion, comparables, tendencia y zonas_precio en esos datos reales encontrados.
+- Explicar en "factores" cómo influyen las diferencias frente a los comparables reales (área, estado, antigüedad, amenidades, vista, etc.).
+
 PROPIEDAD:
 - ${formData.tipo} en ${formData.barrio}, ${formData.ciudad} · Estrato ${formData.estrato}
 - Área: ${formData.areaConstruida}m²${formData.areaTerreno ? ` / Terreno: ${formData.areaTerreno}m²` : ""}
@@ -53,7 +67,7 @@ Exactamente: 5 comparables, 6 factores, 12 meses tendencia, 6 zonas.`;
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-search-preview",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 2000,
         temperature: 0.2,
