@@ -2,17 +2,18 @@
  * FincaRaiz Scraper — ACM Propertia
  * Extrae comparables reales de fincaraiz.com.co
  *
- * Estrategia:
- * 1. Fetch HTML via ScraperAPI (rota IPs residenciales, bypasea bloqueos)
- * 2. Extrae JSON embebido en __NEXT_DATA__ o window.__data
- * 3. Normaliza al formato de comparables de Supabase
+ * En Railway: usa Playwright (Chromium real, sin bloqueos, sin límite de tiempo)
+ * En Vercel:  usa ScraperAPI como fallback (si SCRAPERAPI_KEY está disponible)
  *
- * render=true  → ScraperAPI ejecuta JS antes de devolver el HTML (cron, lento ~10s)
- * render=false → Solo rota IP, sin JS (tiempo real, más rápido ~3s)
+ * Path de datos confirmado:
+ *   __NEXT_DATA__ → props.pageProps.fetchResult.searchFast.data
+ *   precio → item.price.amount
+ *   área   → item.m2Built || item.m2apto || item.m2
  */
 
-const BASE_URL       = "https://fincaraiz.com.co"
+const BASE_URL        = "https://fincaraiz.com.co"
 const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
+const USE_PLAYWRIGHT  = process.env.USE_PLAYWRIGHT === "true"
 
 const TIPO_SLUG = {
   Apartamento:    "apartamentos",
@@ -39,84 +40,57 @@ const CIUDAD_SLUG = {
 }
 
 const HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  Accept:
-    "text/html,application/xhtml+xml,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   "Accept-Language": "es-CO,es;q=0.9",
-  "Cache-Control": "no-cache",
 }
 
-/**
- * Busca comparables en FincaRaiz para una propiedad dada
- * @param {object} params
- * @param {string} params.ciudad
- * @param {string} params.barrio
- * @param {string} params.tipo      - "Apartamento", "Casa", etc.
- * @param {number} params.estrato
- * @param {number} params.area      - m² construidos (para filtrar similares)
- * @param {boolean} params.render   - true = ScraperAPI renderiza JS (más lento, más datos)
- * @returns {Array} comparables normalizados
- */
-export async function scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area, render = false }) {
-  const ciudadSlug = CIUDAD_SLUG[ciudad] || ciudad.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
+export async function scrapeFincaRaiz({ ciudad, barrio, tipo, area }) {
+  const ciudadSlug = CIUDAD_SLUG[ciudad] || slugify(ciudad)
   const tipoSlug   = TIPO_SLUG[tipo] || "inmuebles"
-  const barrioSlug = barrio.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
+  const barrioSlug = slugify(barrio)
   const searchUrl  = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/${barrioSlug}/`
+  const fallbackUrl = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/`
 
-  console.log(`[FincaRaiz] Scraping via ${SCRAPER_API_KEY ? "ScraperAPI" : "directo"}: ${searchUrl}`)
+  const modo = USE_PLAYWRIGHT ? "Playwright" : SCRAPER_API_KEY ? "ScraperAPI" : "directo"
+  console.log(`[FincaRaiz] ${modo}: ${searchUrl}`)
 
   try {
-    const html = await fetchWithTimeout(wrapScraperApi(searchUrl, render), { headers: HEADERS })
-    const listings = extractListings(html, ciudad, barrio, tipo, estrato, area)
-    console.log(`[FincaRaiz] Encontrados ${listings.length} comparables en ${barrio}, ${ciudad}`)
-    return listings
-  } catch (err) {
-    // Intentar con URL sin barrio si la anterior falla
-    try {
-      const fallbackUrl = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/`
-      console.log(`[FincaRaiz] Fallback URL: ${fallbackUrl}`)
-      const html = await fetchWithTimeout(wrapScraperApi(fallbackUrl, render), { headers: HEADERS })
-      const listings = extractListings(html, ciudad, barrio, tipo, estrato, area)
+    const html = await fetchHtml(searchUrl)
+    const listings = extractListings(html, ciudad, barrio, tipo, area)
+    if (listings.length > 0) {
+      console.log(`[FincaRaiz] ${listings.length} comparables en ${barrio}, ${ciudad}`)
       return listings
-    } catch (err2) {
-      console.error(`[FincaRaiz] Error scraping ${ciudad}/${barrio}:`, err2.message)
-      return []
     }
+    // Fallback sin barrio
+    const html2 = await fetchHtml(fallbackUrl)
+    return extractListings(html2, ciudad, barrio, tipo, area)
+  } catch (err) {
+    console.error(`[FincaRaiz] Error ${ciudad}/${barrio}:`, err.message)
+    return []
   }
 }
 
-// ── Extracción de datos ────────────────────────────────────────────────────
+// ── Extracción ─────────────────────────────────────────────────────────────
 
-function extractListings(html, ciudad, barrio, tipo, estrato, area) {
-  const listings = []
-
-  const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-  if (!nextDataMatch) return listings
+function extractListings(html, ciudad, barrio, tipo, area) {
+  const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+  if (!match) return []
 
   try {
-    const nextData = JSON.parse(nextDataMatch[1])
-    const props = nextData?.props?.pageProps
-
-    // Path real de FincaRaiz: props.pageProps.fetchResult.searchFast.data
-    const results = props?.fetchResult?.searchFast?.data || []
-
-    for (const item of results.slice(0, 12)) {
-      const comp = normalizeFincaRaizItem(item, ciudad, barrio, tipo)
-      if (comp && isReasonable(comp, area)) listings.push(comp)
-    }
+    const data    = JSON.parse(match[1])
+    const results = data?.props?.pageProps?.fetchResult?.searchFast?.data || []
+    return results
+      .slice(0, 12)
+      .map(item => normalizeFincaRaizItem(item, ciudad, barrio, tipo))
+      .filter(c => c && isReasonable(c, area))
   } catch (e) {
     console.error("[FincaRaiz] Error parseando __NEXT_DATA__:", e.message)
+    return []
   }
-
-  return listings
 }
 
 function normalizeFincaRaizItem(item, ciudad, barrio, tipo) {
-  // Precio: item.price.amount (en COP)
-  const price = item?.price?.amount || null
-
-  // Área construida: item.m2Built (no item.area que viene null)
+  const price   = item?.price?.amount || null
   const areaVal = item?.m2Built || item?.m2apto || item?.m2 || null
 
   if (!price || !areaVal || price < 10_000_000 || areaVal < 10) return null
@@ -124,15 +98,9 @@ function normalizeFincaRaizItem(item, ciudad, barrio, tipo) {
   const precioM2 = Math.round(price / areaVal)
   if (precioM2 < 500_000 || precioM2 > 30_000_000) return null
 
-  // Barrio desde locations[0].name o dirección
-  const barrioReal =
-    item?.locations?.[0]?.name ||
-    item?.address?.split(",")?.[0] ||
-    barrio
-
   return {
     ciudad,
-    barrio:         barrioReal,
+    barrio:         item?.locations?.[0]?.name || item?.address?.split(",")?.[0] || barrio,
     tipo,
     estrato:        item?.stratum || null,
     area:           parseFloat(areaVal),
@@ -145,39 +113,46 @@ function normalizeFincaRaizItem(item, ciudad, barrio, tipo) {
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── HTTP helpers ───────────────────────────────────────────────────────────
 
-function isReasonable(comp, targetArea) {
-  if (!targetArea) return true
-  // Solo incluir propiedades con área ±50% de la objetivo
-  const ratio = comp.area / targetArea
-  return ratio >= 0.5 && ratio <= 1.5
+async function fetchHtml(url) {
+  // Railway con Playwright (import dinámico para no romper Vercel)
+  if (USE_PLAYWRIGHT) {
+    const { fetchWithBrowser } = await import("./browser.js")
+    return fetchWithBrowser(url)
+  }
+
+  // Vercel con ScraperAPI
+  if (SCRAPER_API_KEY) {
+    const params = new URLSearchParams({
+      api_key: SCRAPER_API_KEY, url,
+      render: "false", country_code: "co",
+    })
+    return fetchRaw(`https://api.scraperapi.com?${params}`)
+  }
+
+  // Directo (puede ser bloqueado)
+  return fetchRaw(url, { headers: HEADERS })
 }
 
-/**
- * Envuelve una URL con ScraperAPI si hay key disponible.
- * Sin key → fetch directo (puede ser bloqueado por los portales).
- * render=true → ScraperAPI ejecuta el JS de la página antes de devolver HTML.
- */
-function wrapScraperApi(url, render = false) {
-  if (!SCRAPER_API_KEY) return url
-  const params = new URLSearchParams({
-    api_key: SCRAPER_API_KEY,
-    url,
-    render: render ? "true" : "false",
-    country_code: "co",  // IPs de Colombia → menos sospechoso para portales locales
-  })
-  return `https://api.scraperapi.com?${params}`
-}
-
-async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+async function fetchRaw(url, options = {}, timeoutMs = 30000) {
+  const ctrl  = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal })
+    const res = await fetch(url, { ...options, signal: ctrl.signal })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.text()
   } finally {
     clearTimeout(timer)
   }
+}
+
+function isReasonable(comp, targetArea) {
+  if (!targetArea) return true
+  const ratio = comp.area / targetArea
+  return ratio >= 0.5 && ratio <= 1.5
+}
+
+function slugify(str) {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
 }

@@ -1,132 +1,97 @@
 /**
  * MetroCuadrado Scraper — ACM Propertia
- * Extrae comparables reales de metrocuadrado.com
  *
- * Ruteamos todas las peticiones por ScraperAPI para bypassear bloqueos de IP.
- * render=true  → ScraperAPI ejecuta JS (cron, lento ~10s)
- * render=false → Solo rota IP (tiempo real, ~3s)
+ * En Railway: Playwright (Chromium real)
+ * En Vercel:  ScraperAPI o fetch directo
  *
- * Endpoint interno: GET /rest-search/search
+ * Estrategia:
+ * 1. REST API JSON: GET /rest-search/search (si responde)
+ * 2. HTML scraping con __NEXT_DATA__ como fallback
  */
 
 const BASE_URL        = "https://www.metrocuadrado.com"
 const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
+const USE_PLAYWRIGHT  = process.env.USE_PLAYWRIGHT === "true"
 
 const TIPO_MC = {
-  Apartamento:    "Apartamento",
-  Casa:           "Casa",
-  Oficina:        "Oficina",
-  Local:          "Local comercial",
-  Bodega:         "Bodega",
-  Lote:           "Lote",
-  "Casa-Lote":    "Casa",
-  Finca:          "Finca",
-  Penthouse:      "Apartamento",
-  Apartaestudio:  "Apartamento",
+  Apartamento:   "Apartamento",
+  Casa:          "Casa",
+  Oficina:       "Oficina",
+  Local:         "Local comercial",
+  Bodega:        "Bodega",
+  Lote:          "Lote",
+  "Casa-Lote":   "Casa",
+  Finca:         "Finca",
+  Penthouse:     "Apartamento",
+  Apartaestudio: "Apartamento",
 }
 
 const HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  Accept:       "application/json, text/plain, */*",
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  Accept: "application/json, text/html, */*",
   "Accept-Language": "es-CO,es;q=0.9",
-  Referer:      "https://www.metrocuadrado.com/",
-  "x-requested-with": "XMLHttpRequest",
+  Referer: "https://www.metrocuadrado.com/",
 }
 
-/**
- * Busca comparables en MetroCuadrado para una propiedad dada
- * @param {object} params
- * @param {string} params.ciudad
- * @param {string} params.barrio
- * @param {string} params.tipo
- * @param {number} params.estrato
- * @param {number} params.area
- * @param {boolean} params.render - true = ScraperAPI renderiza JS
- * @returns {Array} comparables normalizados
- */
-export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area, render = false }) {
+export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, area }) {
   const tipoMC = TIPO_MC[tipo] || tipo
 
-  // ── Intento 1: REST API JSON (via ScraperAPI) ──────────────────────────
+  // ── Intento 1: REST API (JSON directo, no necesita JS) ─────────────────
   try {
-    const searchParams = new URLSearchParams({
-      realEstateTypeList:     tipoMC,
-      realEstateBusinessList: "Venta",
-      city:                   ciudad,
-      rows:                   "20",
-      from:                   "0",
+    const params = new URLSearchParams({
+      realEstateTypeList: tipoMC, realEstateBusinessList: "Venta",
+      city: ciudad, rows: "20", from: "0",
     })
-
-    const apiUrl = `${BASE_URL}/rest-search/search?${searchParams}`
-    console.log(`[MetroCuadrado] API via ${SCRAPER_API_KEY ? "ScraperAPI" : "directo"}: ${apiUrl}`)
-
-    const data = await fetchJson(wrapScraperApi(apiUrl, render), { headers: HEADERS })
+    const apiUrl = `${BASE_URL}/rest-search/search?${params}`
+    const data = await fetchJson(apiUrl)
     const results = data?.results || data?.listings || data?.data || []
 
     if (results.length > 0) {
-      const listings = []
-      for (const item of results.slice(0, 12)) {
-        const comp = normalizeMCItem(item, ciudad, barrio, tipo, area)
-        if (comp) listings.push(comp)
+      const listings = results.slice(0, 12)
+        .map(item => normalizeMCItem(item, ciudad, barrio, tipo, area))
+        .filter(Boolean)
+      if (listings.length > 0) {
+        console.log(`[MetroCuadrado] REST API: ${listings.length} comparables`)
+        return listings
       }
-      console.log(`[MetroCuadrado] REST API: ${listings.length} comparables`)
-      if (listings.length > 0) return listings
     }
   } catch (err) {
     console.warn(`[MetroCuadrado] REST API falló: ${err.message}`)
   }
 
-  // ── Intento 2: Scraping de página de resultados ───────────────────────
+  // ── Intento 2: HTML scraping ──────────────────────────────────────────
   try {
-    const ciudadSlug = slugify(ciudad)
-    const tipoSlug   = tipoMC.toLowerCase().replace(/\s+/g, "-")
-    const barrioSlug = slugify(barrio)
-    const htmlUrl    = `${BASE_URL}/inmuebles/venta/${tipoSlug}/${ciudadSlug}/${barrioSlug}/`
-
+    const htmlUrl = `${BASE_URL}/inmuebles/venta/${slugify(tipoMC)}/${slugify(ciudad)}/${slugify(barrio)}/`
     console.log(`[MetroCuadrado] HTML: ${htmlUrl}`)
-    const html = await fetchText(wrapScraperApi(htmlUrl, render), { headers: { ...HEADERS, Accept: "text/html" } })
-    const listings = extractFromHTML(html, ciudad, barrio, tipo, area)
-    console.log(`[MetroCuadrado] HTML: ${listings.length} comparables`)
-    return listings
+    const html = await fetchHtml(htmlUrl)
+    return extractFromHTML(html, ciudad, barrio, tipo, area)
   } catch (err2) {
-    console.error(`[MetroCuadrado] Ambos métodos fallaron para ${ciudad}/${barrio}: ${err2.message}`)
+    console.error(`[MetroCuadrado] Ambos métodos fallaron ${ciudad}/${barrio}: ${err2.message}`)
     return []
   }
 }
 
-// ── Normalización ─────────────────────────────────────────────────────────
+// ── Normalización ──────────────────────────────────────────────────────────
 
 function normalizeMCItem(item, ciudad, barrio, tipo, targetArea) {
-  // MetroCuadrado estructura de respuesta REST
-  const price =
-    item?.salePrice ||
-    item?.price ||
-    item?.listingData?.salePrice ||
-    null
-
-  const areaVal =
-    item?.area ||
-    item?.builtArea ||
-    item?.listingData?.area ||
-    null
+  const price   = item?.salePrice || item?.price || null
+  const areaVal = item?.area || item?.builtArea || null
 
   if (!price || !areaVal || price < 10_000_000 || areaVal < 10) return null
 
   const precioM2 = Math.round(price / areaVal)
   if (precioM2 < 500_000 || precioM2 > 30_000_000) return null
 
-  // Filtro de área similar
   if (targetArea) {
     const ratio = areaVal / targetArea
     if (ratio < 0.5 || ratio > 1.5) return null
   }
 
   return {
-    ciudad:         item?.city || ciudad,
-    barrio:         item?.neighborhood || item?.sector || barrio,
+    ciudad: item?.city || ciudad,
+    barrio: item?.neighborhood || item?.sector || barrio,
     tipo,
-    estrato:        item?.stratum || item?.estrato || null,
+    estrato:        item?.stratum || null,
     area:           parseFloat(areaVal),
     dormitorios:    item?.rooms || item?.bedrooms || null,
     banos:          item?.bathrooms || null,
@@ -137,62 +102,41 @@ function normalizeMCItem(item, ciudad, barrio, tipo, targetArea) {
   }
 }
 
-function extractFromHTML(html, ciudad, barrio, tipo, targetArea) {
-  const listings = []
-
-  // Intento: __NEXT_DATA__
+function extractFromHTML(html, ciudad, barrio, tipo, area) {
   const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-  if (!match) return listings
-
+  if (!match) return []
   try {
-    const nextData = JSON.parse(match[1])
-    const props = nextData?.props?.pageProps
-    const results =
-      props?.listings?.results ||
-      props?.searchResults ||
-      props?.data?.listings ||
-      []
-
-    for (const item of results.slice(0, 12)) {
-      const comp = normalizeMCItem(item, ciudad, barrio, tipo, targetArea)
-      if (comp) listings.push(comp)
-    }
-  } catch (_) { /* Skip */ }
-
-  return listings
+    const data    = JSON.parse(match[1])
+    const props   = data?.props?.pageProps
+    const results = props?.listings?.results || props?.searchResults || props?.data?.listings || []
+    return results.slice(0, 12)
+      .map(item => normalizeMCItem(item, ciudad, barrio, tipo, area))
+      .filter(Boolean)
+  } catch (_) { return [] }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── HTTP helpers ───────────────────────────────────────────────────────────
 
-function slugify(str) {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
+async function fetchHtml(url) {
+  if (USE_PLAYWRIGHT) {
+    const { fetchWithBrowser } = await import("./browser.js")
+    return fetchWithBrowser(url)
+  }
+  if (SCRAPER_API_KEY) {
+    const params = new URLSearchParams({
+      api_key: SCRAPER_API_KEY, url,
+      render: "false", country_code: "co",
+    })
+    return fetchRaw(`https://api.scraperapi.com?${params}`)
+  }
+  return fetchRaw(url, { headers: { ...HEADERS, Accept: "text/html" } })
 }
 
-/**
- * Envuelve la URL con ScraperAPI si hay key disponible.
- * render=true → renderiza JS antes de devolver HTML (más lento, más datos)
- */
-function wrapScraperApi(url, render = false) {
-  if (!SCRAPER_API_KEY) return url
-  const params = new URLSearchParams({
-    api_key:      SCRAPER_API_KEY,
-    url,
-    render:       render ? "true" : "false",
-    country_code: "co",
-  })
-  return `https://api.scraperapi.com?${params}`
-}
-
-async function fetchJson(url, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+async function fetchJson(url, timeoutMs = 15000) {
+  const ctrl  = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal })
+    const res = await fetch(url, { headers: HEADERS, signal: ctrl.signal })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.json()
   } finally {
@@ -200,14 +144,18 @@ async function fetchJson(url, options = {}, timeoutMs = 30000) {
   }
 }
 
-async function fetchText(url, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+async function fetchRaw(url, options = {}, timeoutMs = 30000) {
+  const ctrl  = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal })
+    const res = await fetch(url, { ...options, signal: ctrl.signal })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.text()
   } finally {
     clearTimeout(timer)
   }
+}
+
+function slugify(str) {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
 }
