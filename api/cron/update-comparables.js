@@ -73,6 +73,7 @@ export default async function handler(req, res) {
         barrio:     mercado.barrio,
         tipo:       mercado.tipo,
         maxResults: 8,
+        render:     true,   // Cron: ScraperAPI renderiza JS completo para máximos datos
       })
 
       if (comparables.length === 0) {

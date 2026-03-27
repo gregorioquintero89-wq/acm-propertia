@@ -54,6 +54,7 @@ export default async function handler(req, res) {
         estrato:    formData.estrato,
         area:       parseFloat(formData.areaConstruida) || null,
         maxResults: 8,
+        render:     false,  // Tiempo real: solo rota IP, más rápido para el usuario
       })
       console.log(`[Analyze] Scraped en tiempo real: ${freshComparables.length}`)
     }

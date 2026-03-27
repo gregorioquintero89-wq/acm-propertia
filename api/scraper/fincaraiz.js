@@ -3,12 +3,16 @@
  * Extrae comparables reales de fincaraiz.com.co
  *
  * Estrategia:
- * 1. Fetch HTML de página de resultados
+ * 1. Fetch HTML via ScraperAPI (rota IPs residenciales, bypasea bloqueos)
  * 2. Extrae JSON embebido en __NEXT_DATA__ o window.__data
  * 3. Normaliza al formato de comparables de Supabase
+ *
+ * render=true  → ScraperAPI ejecuta JS antes de devolver el HTML (cron, lento ~10s)
+ * render=false → Solo rota IP, sin JS (tiempo real, más rápido ~3s)
  */
 
-const BASE_URL = "https://fincaraiz.com.co"
+const BASE_URL       = "https://fincaraiz.com.co"
+const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
 
 const TIPO_SLUG = {
   Apartamento:    "apartamentos",
@@ -51,20 +55,19 @@ const HEADERS = {
  * @param {string} params.tipo      - "Apartamento", "Casa", etc.
  * @param {number} params.estrato
  * @param {number} params.area      - m² construidos (para filtrar similares)
+ * @param {boolean} params.render   - true = ScraperAPI renderiza JS (más lento, más datos)
  * @returns {Array} comparables normalizados
  */
-export async function scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area }) {
+export async function scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area, render = false }) {
   const ciudadSlug = CIUDAD_SLUG[ciudad] || ciudad.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
   const tipoSlug   = TIPO_SLUG[tipo] || "inmuebles"
-
-  // Construir URL de búsqueda
   const barrioSlug = barrio.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")
   const searchUrl  = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/${barrioSlug}/`
 
-  console.log(`[FincaRaiz] Scraping: ${searchUrl}`)
+  console.log(`[FincaRaiz] Scraping via ${SCRAPER_API_KEY ? "ScraperAPI" : "directo"}: ${searchUrl}`)
 
   try {
-    const html = await fetchWithTimeout(searchUrl, { headers: HEADERS })
+    const html = await fetchWithTimeout(wrapScraperApi(searchUrl, render), { headers: HEADERS })
     const listings = extractListings(html, ciudad, barrio, tipo, estrato, area)
     console.log(`[FincaRaiz] Encontrados ${listings.length} comparables en ${barrio}, ${ciudad}`)
     return listings
@@ -73,7 +76,7 @@ export async function scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area }) {
     try {
       const fallbackUrl = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/`
       console.log(`[FincaRaiz] Fallback URL: ${fallbackUrl}`)
-      const html = await fetchWithTimeout(fallbackUrl, { headers: HEADERS })
+      const html = await fetchWithTimeout(wrapScraperApi(fallbackUrl, render), { headers: HEADERS })
       const listings = extractListings(html, ciudad, barrio, tipo, estrato, area)
       return listings
     } catch (err2) {
@@ -211,7 +214,23 @@ function isReasonable(comp, targetArea) {
   return ratio >= 0.5 && ratio <= 1.5
 }
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+/**
+ * Envuelve una URL con ScraperAPI si hay key disponible.
+ * Sin key → fetch directo (puede ser bloqueado por los portales).
+ * render=true → ScraperAPI ejecuta el JS de la página antes de devolver HTML.
+ */
+function wrapScraperApi(url, render = false) {
+  if (!SCRAPER_API_KEY) return url
+  const params = new URLSearchParams({
+    api_key: SCRAPER_API_KEY,
+    url,
+    render: render ? "true" : "false",
+    country_code: "co",  // IPs de Colombia → menos sospechoso para portales locales
+  })
+  return `https://api.scraperapi.com?${params}`
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {

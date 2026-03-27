@@ -19,15 +19,16 @@ import { scrapeMetroCuadrado } from "./metrocuadrado.js"
  * @param {number} [params.estrato]
  * @param {number} [params.area]       - m² construidos
  * @param {number} [params.maxResults] - límite de resultados (default 10)
+ * @param {boolean} [params.render]    - true = ScraperAPI renderiza JS (cron), false = solo IP rotation (tiempo real)
  * @returns {Promise<Array>} comparables normalizados y deduplicados
  */
-export async function scrapeComparables({ ciudad, barrio, tipo, estrato, area, maxResults = 10 }) {
-  console.log(`[Scraper] Buscando comparables: ${tipo} en ${barrio}, ${ciudad}`)
+export async function scrapeComparables({ ciudad, barrio, tipo, estrato, area, maxResults = 10, render = false }) {
+  console.log(`[Scraper] Buscando comparables: ${tipo} en ${barrio}, ${ciudad} | render=${render}`)
 
   // Ejecutar ambos scrapers en paralelo para mayor velocidad
   const [fincaraizResults, metrocuadradoResults] = await Promise.allSettled([
-    scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area }),
-    scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area }),
+    scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area, render }),
+    scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area, render }),
   ])
 
   const fromFR = fincaraizResults.status  === "fulfilled" ? fincaraizResults.value  : []

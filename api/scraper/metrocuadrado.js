@@ -2,14 +2,15 @@
  * MetroCuadrado Scraper — ACM Propertia
  * Extrae comparables reales de metrocuadrado.com
  *
- * MetroCuadrado expone un endpoint REST interno (/rest-search/search)
- * que devuelve JSON directamente — más fiable que parsear HTML.
+ * Ruteamos todas las peticiones por ScraperAPI para bypassear bloqueos de IP.
+ * render=true  → ScraperAPI ejecuta JS (cron, lento ~10s)
+ * render=false → Solo rota IP (tiempo real, ~3s)
  *
- * Endpoint: GET https://www.metrocuadrado.com/rest-search/search
- * Params: realEstateTypeList, realEstateBusinessList, city, rows, from
+ * Endpoint interno: GET /rest-search/search
  */
 
-const BASE_URL = "https://www.metrocuadrado.com"
+const BASE_URL        = "https://www.metrocuadrado.com"
+const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
 
 const TIPO_MC = {
   Apartamento:    "Apartamento",
@@ -41,14 +42,15 @@ const HEADERS = {
  * @param {string} params.tipo
  * @param {number} params.estrato
  * @param {number} params.area
+ * @param {boolean} params.render - true = ScraperAPI renderiza JS
  * @returns {Array} comparables normalizados
  */
-export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area }) {
+export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area, render = false }) {
   const tipoMC = TIPO_MC[tipo] || tipo
 
-  // ── Intento 1: REST API JSON ───────────────────────────────────────────
+  // ── Intento 1: REST API JSON (via ScraperAPI) ──────────────────────────
   try {
-    const params = new URLSearchParams({
+    const searchParams = new URLSearchParams({
       realEstateTypeList:     tipoMC,
       realEstateBusinessList: "Venta",
       city:                   ciudad,
@@ -56,10 +58,10 @@ export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area 
       from:                   "0",
     })
 
-    const apiUrl = `${BASE_URL}/rest-search/search?${params}`
-    console.log(`[MetroCuadrado] API: ${apiUrl}`)
+    const apiUrl = `${BASE_URL}/rest-search/search?${searchParams}`
+    console.log(`[MetroCuadrado] API via ${SCRAPER_API_KEY ? "ScraperAPI" : "directo"}: ${apiUrl}`)
 
-    const data = await fetchJson(apiUrl, { headers: HEADERS })
+    const data = await fetchJson(wrapScraperApi(apiUrl, render), { headers: HEADERS })
     const results = data?.results || data?.listings || data?.data || []
 
     if (results.length > 0) {
@@ -77,13 +79,13 @@ export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, estrato, area 
 
   // ── Intento 2: Scraping de página de resultados ───────────────────────
   try {
-    const ciudadSlug  = slugify(ciudad)
-    const tipoSlug    = tipoMC.toLowerCase().replace(/\s+/g, "-")
-    const barrioSlug  = slugify(barrio)
-    const htmlUrl     = `${BASE_URL}/inmuebles/venta/${tipoSlug}/${ciudadSlug}/${barrioSlug}/`
+    const ciudadSlug = slugify(ciudad)
+    const tipoSlug   = tipoMC.toLowerCase().replace(/\s+/g, "-")
+    const barrioSlug = slugify(barrio)
+    const htmlUrl    = `${BASE_URL}/inmuebles/venta/${tipoSlug}/${ciudadSlug}/${barrioSlug}/`
 
     console.log(`[MetroCuadrado] HTML: ${htmlUrl}`)
-    const html = await fetchText(htmlUrl, { headers: { ...HEADERS, Accept: "text/html" } })
+    const html = await fetchText(wrapScraperApi(htmlUrl, render), { headers: { ...HEADERS, Accept: "text/html" } })
     const listings = extractFromHTML(html, ciudad, barrio, tipo, area)
     console.log(`[MetroCuadrado] HTML: ${listings.length} comparables`)
     return listings
@@ -171,7 +173,22 @@ function slugify(str) {
     .replace(/[^a-z0-9-]/g, "")
 }
 
-async function fetchJson(url, options = {}, timeoutMs = 12000) {
+/**
+ * Envuelve la URL con ScraperAPI si hay key disponible.
+ * render=true → renderiza JS antes de devolver HTML (más lento, más datos)
+ */
+function wrapScraperApi(url, render = false) {
+  if (!SCRAPER_API_KEY) return url
+  const params = new URLSearchParams({
+    api_key:      SCRAPER_API_KEY,
+    url,
+    render:       render ? "true" : "false",
+    country_code: "co",
+  })
+  return `https://api.scraperapi.com?${params}`
+}
+
+async function fetchJson(url, options = {}, timeoutMs = 30000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -183,7 +200,7 @@ async function fetchJson(url, options = {}, timeoutMs = 12000) {
   }
 }
 
-async function fetchText(url, options = {}, timeoutMs = 12000) {
+async function fetchText(url, options = {}, timeoutMs = 30000) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
