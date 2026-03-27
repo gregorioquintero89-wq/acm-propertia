@@ -91,117 +91,57 @@ export async function scrapeFincaRaiz({ ciudad, barrio, tipo, estrato, area, ren
 function extractListings(html, ciudad, barrio, tipo, estrato, area) {
   const listings = []
 
-  // Intento 1: __NEXT_DATA__ (Next.js)
   const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
-  if (nextDataMatch) {
-    try {
-      const nextData = JSON.parse(nextDataMatch[1])
-      const props = nextData?.props?.pageProps
-      const results =
-        props?.listings?.results ||
-        props?.searchResults?.listings ||
-        props?.data?.listings ||
-        []
+  if (!nextDataMatch) return listings
 
-      for (const item of results.slice(0, 10)) {
-        const comp = normalizeFincaRaizItem(item, ciudad, barrio, tipo)
-        if (comp && isReasonable(comp, area)) listings.push(comp)
-      }
-      if (listings.length > 0) return listings
-    } catch (_) { /* Continuar con siguiente método */ }
-  }
+  try {
+    const nextData = JSON.parse(nextDataMatch[1])
+    const props = nextData?.props?.pageProps
 
-  // Intento 2: window.__INITIAL_STATE__ o window.dataCache
-  const stateMatch = html.match(/window\.__(?:INITIAL_STATE|dataCache|data)__\s*=\s*(\{[\s\S]*?\});\s*(?:window|<\/script)/)
-  if (stateMatch) {
-    try {
-      const state = JSON.parse(stateMatch[1])
-      const results =
-        state?.listings?.items ||
-        state?.search?.results ||
-        []
+    // Path real de FincaRaiz: props.pageProps.fetchResult.searchFast.data
+    const results = props?.fetchResult?.searchFast?.data || []
 
-      for (const item of results.slice(0, 10)) {
-        const comp = normalizeFincaRaizItem(item, ciudad, barrio, tipo)
-        if (comp && isReasonable(comp, area)) listings.push(comp)
-      }
-      if (listings.length > 0) return listings
-    } catch (_) { /* Continuar */ }
-  }
-
-  // Intento 3: JSON-LD de listado
-  const jsonLdMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
-  for (const match of jsonLdMatches) {
-    try {
-      const ld = JSON.parse(match[1])
-      if (ld["@type"] === "RealEstateListing" || ld["@type"] === "Product") {
-        const comp = normalizeJsonLD(ld, ciudad, barrio, tipo)
-        if (comp && isReasonable(comp, area)) listings.push(comp)
-      }
-    } catch (_) { /* Skip */ }
+    for (const item of results.slice(0, 12)) {
+      const comp = normalizeFincaRaizItem(item, ciudad, barrio, tipo)
+      if (comp && isReasonable(comp, area)) listings.push(comp)
+    }
+  } catch (e) {
+    console.error("[FincaRaiz] Error parseando __NEXT_DATA__:", e.message)
   }
 
   return listings
 }
 
 function normalizeFincaRaizItem(item, ciudad, barrio, tipo) {
-  // FincaRaiz puede tener distintas estructuras según versión del API
-  const price =
-    item?.price ||
-    item?.sale_price ||
-    item?.listingData?.price ||
-    item?.attributes?.sale_price ||
-    null
+  // Precio: item.price.amount (en COP)
+  const price = item?.price?.amount || null
 
-  const areaVal =
-    item?.area ||
-    item?.built_area ||
-    item?.listingData?.area ||
-    item?.attributes?.area ||
-    null
+  // Área construida: item.m2Built (no item.area que viene null)
+  const areaVal = item?.m2Built || item?.m2apto || item?.m2 || null
 
   if (!price || !areaVal || price < 10_000_000 || areaVal < 10) return null
 
   const precioM2 = Math.round(price / areaVal)
-  // Sanity check: precios COP por m² razonables (500k - 30M)
   if (precioM2 < 500_000 || precioM2 > 30_000_000) return null
+
+  // Barrio desde locations[0].name o dirección
+  const barrioReal =
+    item?.locations?.[0]?.name ||
+    item?.address?.split(",")?.[0] ||
+    barrio
 
   return {
     ciudad,
-    barrio: item?.neighborhood || item?.barrio || barrio,
+    barrio:         barrioReal,
     tipo,
-    estrato: item?.stratum || item?.estrato || null,
-    area: parseFloat(areaVal),
-    dormitorios: item?.rooms || item?.bedrooms || item?.dormitorios || null,
-    banos: item?.bathrooms || item?.banos || null,
+    estrato:        item?.stratum || null,
+    area:           parseFloat(areaVal),
+    dormitorios:    item?.bedrooms || item?.rooms || null,
+    banos:          item?.bathrooms || null,
     precio_mercado: Math.round(price),
-    precio_m2: precioM2,
-    estado: "Bueno",
-    fuente: "fincaraiz",
-  }
-}
-
-function normalizeJsonLD(ld, ciudad, barrio, tipo) {
-  const price = ld?.offers?.price || ld?.price
-  const area  = ld?.floorSize?.value || ld?.area
-
-  if (!price || !area) return null
-
-  const precioM2 = Math.round(price / area)
-  if (precioM2 < 500_000 || precioM2 > 30_000_000) return null
-
-  return {
-    ciudad,
-    barrio,
-    tipo,
-    estrato: null,
-    area: parseFloat(area),
-    dormitorios: ld?.numberOfRooms || null,
-    banos: ld?.numberOfBathroomsTotal || null,
-    precio_mercado: Math.round(price),
-    precio_m2: precioM2,
-    estado: "Bueno",
-    fuente: "fincaraiz_ld",
+    precio_m2:      precioM2,
+    estado:         "Bueno",
+    fuente:         "fincaraiz",
   }
 }
 
