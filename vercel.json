@@ -5,6 +5,10 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
+  "functions": {
+    "api/cron/update-comparables.js": { "maxDuration": 60 },
+    "api/analyze.js":                 { "maxDuration": 60 }
+  },
   "crons": [
     {
       "path": "/api/cron/update-comparables",

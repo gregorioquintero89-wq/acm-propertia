@@ -22,31 +22,35 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-// Combinaciones que se actualizan diariamente
-// Priorizar los mercados más activos del portafolio Propertia
-const MERCADOS = [
-  // Cali — principal mercado
+// Cada cron solo procesa un lote — rotamos diariamente para cubrir todos los mercados
+// sin exceder el timeout de 60s de Vercel Hobby.
+// El índice del lote se determina por el día del mes (mod cantidad de lotes).
+const TODOS_LOS_MERCADOS = [
+  // Lote 0 — Cali norte
   { ciudad: "Cali", barrio: "Granada",          tipo: "Apartamento" },
-  { ciudad: "Cali", barrio: "El Ingenio",       tipo: "Casa" },
-  { ciudad: "Cali", barrio: "Ciudad Jardín",    tipo: "Apartamento" },
+  { ciudad: "Cali", barrio: "Santa Teresita",   tipo: "Apartamento" },
   { ciudad: "Cali", barrio: "San Fernando",     tipo: "Apartamento" },
+  // Lote 1 — Cali sur
+  { ciudad: "Cali", barrio: "Ciudad Jardín",    tipo: "Apartamento" },
   { ciudad: "Cali", barrio: "Valle del Lili",   tipo: "Apartamento" },
+  { ciudad: "Cali", barrio: "El Ingenio",       tipo: "Casa" },
+  // Lote 2 — Cali casas
   { ciudad: "Cali", barrio: "Bochalema",        tipo: "Casa" },
   { ciudad: "Cali", barrio: "Alfaguara",        tipo: "Casa" },
   { ciudad: "Cali", barrio: "Pance",            tipo: "Casa" },
-  { ciudad: "Cali", barrio: "La Flora",         tipo: "Casa" },
-  { ciudad: "Cali", barrio: "Santa Teresita",   tipo: "Apartamento" },
-  // Bogotá
-  { ciudad: "Bogotá", barrio: "Chapinero",      tipo: "Apartamento" },
-  { ciudad: "Bogotá", barrio: "Usaquén",        tipo: "Casa" },
-  { ciudad: "Bogotá", barrio: "Rosales",        tipo: "Apartamento" },
-  // Medellín
+  // Lote 3 — Bogotá y Medellín
+  { ciudad: "Bogotá",   barrio: "Chapinero",    tipo: "Apartamento" },
+  { ciudad: "Bogotá",   barrio: "Rosales",      tipo: "Apartamento" },
   { ciudad: "Medellín", barrio: "El Poblado",   tipo: "Apartamento" },
-  { ciudad: "Medellín", barrio: "Laureles",     tipo: "Casa" },
 ]
 
-// Delay entre scrapers para no sobrecargar los portales
-const DELAY_MS = 3000
+const LOTE_SIZE  = 3
+const NUM_LOTES  = Math.ceil(TODOS_LOS_MERCADOS.length / LOTE_SIZE)
+const loteIndex  = new Date().getDate() % NUM_LOTES
+const MERCADOS   = TODOS_LOS_MERCADOS.slice(loteIndex * LOTE_SIZE, (loteIndex + 1) * LOTE_SIZE)
+
+// Sin delay — ScraperAPI maneja el rate limiting internamente
+const DELAY_MS = 500
 
 export default async function handler(req, res) {
   // Verificar autenticación del cron
