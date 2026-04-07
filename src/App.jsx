@@ -372,6 +372,29 @@ const Inp = ({ value, onChange, type = "text", placeholder, unit }) => (
   </div>
 )
 
+const MoneyInp = ({ value, onChange, placeholder, unit = "COP" }) => {
+  const raw     = String(value || "").replace(/\D/g, "")
+  const display = raw ? Number(raw).toLocaleString("es-CO") : ""
+  return (
+    <div style={{ position:"relative" }}>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={display}
+        onChange={e => onChange(e.target.value.replace(/\D/g, ""))}
+        placeholder={placeholder}
+        style={{
+          width:"100%", padding:"11px 52px 11px 14px", borderRadius:8,
+          border:`1px solid ${raw ? C.green+"60" : C.border}`,
+          fontSize:14, color:C.white, background:C.bg3, outline:"none",
+          boxSizing:"border-box", transition:"border .2s"
+        }}
+      />
+      <span style={{ position:"absolute", right:13, top:"50%", transform:"translateY(-50%)", fontSize:11, color:C.gray, fontWeight:700 }}>{unit}</span>
+    </div>
+  )
+}
+
 const GridSel = ({ label, items, value, onChange, cols = 2 }) => (
   <div>
     {label && <Label>{label}</Label>}
@@ -711,7 +734,7 @@ function P3({ f, s }) {
           {v:"basicos",l:"Básicos",icon:"🔧"},{v:"estandar",l:"Estándar",icon:"🏠"},
           {v:"premium",l:"Premium",icon:"✨"},{v:"lujo",l:"Lujo",icon:"💎"}
         ]}/>
-        <div><Label>Administración mensual</Label><Inp type="number" value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 450000 — 0 si no aplica" unit="COP"/></div>
+        <div><Label>Administración mensual</Label><MoneyInp value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 450.000 — 0 si no aplica"/></div>
       </div>
     </div>
   )
@@ -790,7 +813,7 @@ function P4({ f, s }) {
             </div>
           </div>
           {grupo !== "comercial" && (
-            <div><Label>Administración mensual</Label><Inp type="number" value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 350000" unit="COP"/></div>
+            <div><Label>Administración mensual</Label><MoneyInp value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 350.000"/></div>
           )}
         </div>
       </div>
@@ -862,7 +885,7 @@ const P7 = ({ f, s }) => (
     <div style={{ display:"grid", gap:18 }}>
       <div>
         <Label>Precio de referencia en mente</Label>
-        <Inp type="number" value={f.precioRef} onChange={v => s({...f,precioRef:v})} placeholder="Ej: 750000000" unit="COP"/>
+        <MoneyInp value={f.precioRef} onChange={v => s({...f,precioRef:v})} placeholder="Ej: 750.000.000"/>
         {f.precioRef && <div style={{ marginTop:6, fontSize:12, color:C.green, fontWeight:700 }}>{fmt(parseInt(f.precioRef))}</div>}
       </div>
       <GridSel label="Plazo deseado de venta" value={f.plazo} onChange={v => s({...f,plazo:v})} cols={2} items={[
