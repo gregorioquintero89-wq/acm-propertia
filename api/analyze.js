@@ -174,9 +174,9 @@ JSON a devolver:
 {
   "resumen_ejecutivo": "2-3 oraciones sobre la propiedad y el mercado actual con datos concretos",
   "precio_m2_base": número (basado en comparables reales),
-  "precio_oportunidad": número (precio bajo para venta rápida, -10% a -15%),
-  "precio_mercado": número (precio justo de mercado),
-  "precio_aspiracion": número (precio alto, +10% a +20%),
+  "precio_oportunidad": número (precio inmediato, cierre < 30 días, -12% a -18%),
+  "precio_mercado": número (precio de mercado, venta en 1-6 meses),
+  "precio_aspiracion": número (precio óptimo máximo, +10% a +20%, venta lenta),
   "comparables": [
     {"nombre":"string","zona":"string","area":número,"precio":número,"dormitorios":número,"banos":número,"antiguedad":número,"estado":"Excelente|Bueno|Regular"}
   ],
@@ -186,10 +186,10 @@ JSON a devolver:
   "tendencia": [{"mes":"string","precio":número}],
   "zonas_precio": [{"zona":"string","precio":número}],
   "recomendaciones": {
-    "precio_inicial":"string",
-    "estrategia":"string",
-    "atributos":"string",
-    "objeciones":"string"
+    "precio_inicial":"string (qué precio publicar primero y por qué)",
+    "estrategia":"string (estrategia de negociación y cierre — NO mencionar portales inmobiliarios ni FincaRaiz ni MetroCuadrado)",
+    "atributos":"string (atributos clave a destacar en la promoción)",
+    "objeciones":"string (cómo manejar objeciones comunes de compradores)"
   },
   "plazo_oportunidad":"string",
   "plazo_mercado":"string",

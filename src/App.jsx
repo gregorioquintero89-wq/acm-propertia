@@ -1112,9 +1112,9 @@ const Results = ({ form, result, onReset, saved }) => {
       {/* TAB PRECIOS */}
       {tab==="precios" && <div style={{ display:"grid", gap:12 }}>
         {[
-          { tipo:"Oportunidad", precio:result.precio_oportunidad, plazo:result.plazo_oportunidad||"< 3 meses", desc:"Precio competitivo para venta rápida.", color:"#60A5FA", border:"#3B82F630", icon:"⚡" },
-          { tipo:"Mercado", precio:result.precio_mercado, plazo:result.plazo_mercado||"3–6 meses", desc:"Equilibrio perfecto entre precio y tiempo. Máxima probabilidad de cierre.", color:C.green, border:`${C.green}40`, icon:"⚖️", rec:true },
-          { tipo:"Aspiración", precio:result.precio_aspiracion, plazo:result.plazo_aspiracion||"> 6 meses", desc:"Capitaliza todos los atributos premium.", color:"#A78BFA", border:"#7C3AED30", icon:"💎" },
+          { tipo:"Inmediato", precio:result.precio_oportunidad, plazo:result.plazo_oportunidad||"< 30 días", desc:"Precio para cerrar rápido. Genera urgencia y atrae compradores activos.", color:"#60A5FA", border:"#3B82F630", icon:"🔥" },
+          { tipo:"Mercado", precio:result.precio_mercado, plazo:result.plazo_mercado||"1–6 meses", desc:"Precio justo según el mercado actual. Máxima probabilidad de cierre.", color:C.green, border:`${C.green}40`, icon:"⚖️", rec:true },
+          { tipo:"Óptimo", precio:result.precio_aspiracion, plazo:result.plazo_aspiracion||"6–12 meses", desc:"Precio máximo. Para quien no tiene prisa y quiere capitalizar al máximo.", color:"#A78BFA", border:"#7C3AED30", icon:"💎" },
         ].map(p => (
           <div key={p.tipo} style={{ background:C.bg2, borderRadius:14, padding:"22px 24px", border:`1px solid ${p.border}`, boxShadow: p.rec ? `0 0 20px ${C.greenGlow}` : "none", position:"relative" }}>
             {p.rec && <div style={{ position:"absolute", top:-12, right:18, background:C.green, color:C.bg, padding:"3px 14px", borderRadius:20, fontSize:10, fontWeight:800, letterSpacing:1 }}>⭐ RECOMENDADO</div>}
@@ -1143,7 +1143,6 @@ const Results = ({ form, result, onReset, saved }) => {
         <button onClick={() => window.print()} style={{ flex:2, padding:"14px", borderRadius:12, border:`1px solid ${C.green}`, background:`${C.green}15`, color:C.green, fontWeight:800, fontSize:14, cursor:"pointer" }}>📄 Imprimir / PDF</button>
         <button onClick={onReset} style={{ flex:1, padding:"14px", borderRadius:12, border:`1px solid ${C.border}`, background:"transparent", color:C.gray, fontWeight:700, fontSize:14, cursor:"pointer" }}>🔄 Nuevo</button>
       </div>
-      <div style={{ textAlign:"center", marginTop:12, fontSize:11, color:C.gray }}>Análisis generado con Claude AI · Datos guardados en Supabase</div>
     </div>
   )
 }
