@@ -866,13 +866,9 @@ function P4({ f, s }) {
           <div>
             <Label>Seguridad</Label>
             <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:6 }}>
-              {["Portería 24/7","Acceso inteligente","Cámaras","Sin seguridad"].map(sg => {
-                const sel = (f.seguridad||[]).includes(sg)
-                return <Chip key={sg} label={sg} active={sel} onClick={() => {
-                  const arr = f.seguridad||[]
-                  s({...f, seguridad: sel ? arr.filter(x=>x!==sg) : [...arr,sg]})
-                }}/>
-              })}
+              {["Portería 24/7","Acceso inteligente","Sin seguridad"].map(sg => (
+                <Chip key={sg} label={sg} active={f.seguridad === sg} onClick={() => s({...f, seguridad: sg})}/>
+              ))}
             </div>
           </div>
           {grupo !== "comercial" && (

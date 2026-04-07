@@ -155,7 +155,7 @@ PROPIEDAD A VALUAR:
 - Acabados: ${formData.acabados||"estándar"} · Cocina: ${formData.cocina||"N/A"} · Altura techos: ${formData.altTechos||"estándar"}
 - Balcón: ${formData.balcon ? `Sí (${formData.balconM2}m²)` : "No"} · Sótano: ${formData.sotano?"Sí":"No"}
 - Piscina: ${formData.piscina ? `Sí (${formData.piscinaT||""})` : "No"} · Gimnasio: ${formData.gimnasio?"Sí":"No"} · Salón social: ${formData.salon?"Sí":"No"} · Sauna: ${formData.sauna?"Sí":"No"} · Ascensor: ${formData.ascensor?"Sí":"No"}
-- Seguridad: ${(formData.seguridad||[]).join(", ")||"básica"} · Administración: ${formData.adminM ? `$${parseInt(formData.adminM).toLocaleString("es-CO")}/mes` : "N/A"}
+- Seguridad: ${formData.seguridad||"Sin seguridad"} · Administración: ${formData.adminM ? `$${parseInt(formData.adminM).toLocaleString("es-CO")}/mes` : "N/A"}
 - Parqueaderos: ${formData.parqueaderos||0}${formData.parqT?` (${formData.parqT})`:""}
 - Vista: ${formData.vista||"N/A"} (calidad: ${formData.calidadV||"N/A"}) · Orientación: ${formData.orientacion||"N/A"}
 - Proximidad: Restaurantes: ${formData.proxGastro||"N/A"} · Comercio: ${formData.proxComercio||"N/A"} · Transporte: ${formData.proxTransp||"N/A"}
