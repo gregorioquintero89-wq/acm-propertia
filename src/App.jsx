@@ -472,7 +472,7 @@ const Chip = ({ label, active, onClick }) => (
 )
 
 // ── PROGRESS BAR ──────────────────────────────────────────────────────────────
-const PHASE_LABELS = ["Ubicación","Detalles","Interiores","Amenidades","Parqueadero","Vistas","Financiero"]
+const PHASE_LABELS = ["Ubicación","Detalles","Interiores","Amenidades","Parqueadero","Financiero"]
 
 const ProgressBar = ({ current }) => (
   <div style={{ marginBottom:32 }}>
@@ -480,7 +480,7 @@ const ProgressBar = ({ current }) => (
       <div style={{ position:"absolute", top:14, left:"5%", right:"5%", height:1, background:C.border, zIndex:0 }}/>
       <div style={{
         position:"absolute", top:14, left:"5%", height:1, zIndex:1,
-        width:`${Math.min(100,((current-1)/6)*100)}%`,
+        width:`${Math.min(100,((current-1)/5)*100)}%`,
         background:`linear-gradient(90deg,${C.green},${C.greenD})`,
         transition:"width .4s ease",
         boxShadow:`0 0 8px ${C.green}`
@@ -897,46 +897,6 @@ const P5 = ({ f, s }) => (
   </div>
 )
 
-const P6 = ({ f, s }) => (
-  <div>
-    <PhaseTitle icon="🌅" title="Vistas y Localización" sub="La orientación y entorno pueden valorizar hasta 15%."/>
-    <div style={{ display:"grid", gap:18 }}>
-      <GridSel label="Orientación principal" value={f.orientacion} onChange={v => s({...f,orientacion:v})} cols={4} items={[
-        {v:"norte",l:"⬆️ Norte"},{v:"sur",l:"⬇️ Sur"},{v:"oriente",l:"➡️ Oriente"},{v:"occidente",l:"⬅️ Occidente"}
-      ]}/>
-      <GridSel label="Tipo de vista" value={f.vista} onChange={v => s({...f,vista:v})} cols={3} items={[
-        {v:"ciudad",l:"🌆 Ciudad"},{v:"cerros",l:"⛰️ Cerros"},{v:"rio",l:"🌊 Río"},
-        {v:"parque",l:"🌳 Parque"},{v:"calle",l:"🚦 Calle"},{v:"otra",l:"🔭 Otra"}
-      ]}/>
-      <GridSel label="Calidad de la vista" value={f.calidadV} onChange={v => s({...f,calidadV:v})} cols={3} items={[
-        {v:"despejada",l:"🔭 Despejada"},{v:"parcial",l:"🌫️ Parcial"},{v:"obstruida",l:"🧱 Obstruida"}
-      ]}/>
-      <div>
-        <Label>Proximidades</Label>
-        <div style={{ display:"grid", gap:10 }}>
-          {[{l:"🍽️ Gastronomía",k:"proxGastro"},{l:"🛒 Comercio",k:"proxComercio"},{l:"🚌 Transporte",k:"proxTransp"}].map(({l,k}) => (
-            <div key={k}>
-              <div style={{ fontSize:12, color:C.gray, marginBottom:6 }}>{l}</div>
-              <div style={{ display:"flex", gap:8 }}>
-                {["Cercana","Media","Lejana"].map(p => (
-                  <div key={p} onClick={() => s({...f,[k]:p})} style={{
-                    flex:1, padding:"9px", borderRadius:8, textAlign:"center", cursor:"pointer", fontSize:12,
-                    border:`1px solid ${f[k]===p ? C.green : C.border}`,
-                    background: f[k]===p ? C.green+"20" : C.bg3,
-                    color: f[k]===p ? C.green : C.gray, fontWeight:f[k]===p ? 700 : 400
-                  }}>{p}</div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <GridSel label="Estado de la zona" value={f.zonaEst} onChange={v => s({...f,zonaEst:v})} cols={2} items={[
-        {v:"desarrollo",l:"🔨 En desarrollo"},{v:"consolidada",l:"✅ Consolidada"}
-      ]}/>
-    </div>
-  </div>
-)
 
 const P7 = ({ f, s }) => (
   <div>
@@ -1205,12 +1165,11 @@ export default function App() {
 
   const PHASES = [
     <P1 f={form} s={setForm}/>, <P2 f={form} s={setForm}/>, <P3 f={form} s={setForm}/>,
-    <P4 f={form} s={setForm}/>, <P5 f={form} s={setForm}/>, <P6 f={form} s={setForm}/>,
-    <P7 f={form} s={setForm}/>,
+    <P4 f={form} s={setForm}/>, <P5 f={form} s={setForm}/>, <P7 f={form} s={setForm}/>,
   ]
 
   const next = async () => {
-    if (phase < 7) { setPhase(p => p+1); return }
+    if (phase < 6) { setPhase(p => p+1); return }
     setLoading(true); setError(null); setSaved(false)
     try {
       // 1. Llamar a Claude AI
@@ -1262,7 +1221,7 @@ export default function App() {
               </div>
             </div>
             {!result && !loading && (
-              <div style={{ fontSize:11.5, color:C.gray, background:C.bg2, padding:"5px 14px", borderRadius:20, border:`1px solid ${C.border}` }}>Fase {phase} / 7</div>
+              <div style={{ fontSize:11.5, color:C.gray, background:C.bg2, padding:"5px 14px", borderRadius:20, border:`1px solid ${C.border}` }}>Fase {phase} / 6</div>
             )}
           </div>
 
@@ -1286,7 +1245,7 @@ export default function App() {
                     color:C.bg, fontWeight:800, fontSize:15, cursor:"pointer",
                     boxShadow:`0 4px 20px ${C.greenGlow}`, letterSpacing:.3
                   }}>
-                    {phase===7 ? "✦ Generar Análisis con IA" : "Continuar →"}
+                    {phase===6 ? "✦ Generar Análisis con IA" : "Continuar →"}
                   </button>
                 </div>
               </Card>
