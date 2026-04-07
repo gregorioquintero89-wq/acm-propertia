@@ -616,19 +616,12 @@ const P1 = ({ f, s }) => {
           />
         </div>
 
-        {/* Barrio — Google Places Autocomplete */}
+        {/* Barrio — texto libre */}
         <div>
           <Label req>Barrio</Label>
-          <PlacesInput
+          <Inp
             value={f.barrio}
             onChange={v => s({ ...f, barrio:v })}
-            onPlace={({ barrio, ciudad, pais }) => s({
-              ...f,
-              barrio,
-              ciudad: ciudad || f.ciudad,
-              pais: PAISES.find(p => p.v === pais || p.l.includes(pais)) ? pais : (f.pais || "Colombia"),
-            })}
-            pais={f.pais || "Colombia"}
             placeholder="Ej: El Poblado, Usaquén, Laureles..."
           />
         </div>
