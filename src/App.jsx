@@ -907,10 +907,6 @@ const P7 = ({ f, s }) => (
         <MoneyInp value={f.precioRef} onChange={v => s({...f,precioRef:v})} placeholder="Ej: 750.000.000"/>
         {f.precioRef && <div style={{ marginTop:6, fontSize:12, color:C.green, fontWeight:700 }}>{fmt(parseInt(f.precioRef))}</div>}
       </div>
-      <GridSel label="Plazo deseado de venta" value={f.plazo} onChange={v => s({...f,plazo:v})} cols={2} items={[
-        {v:"urgente",l:"🔥 Urgente"},{v:"1-3m",l:"⚡ 1–3 meses"},
-        {v:"3-6m",l:"📅 3–6 meses"},{v:"sin-prisa",l:"🎯 Sin prisa"}
-      ]}/>
       <div>
         <Label>Notas adicionales</Label>
         <textarea value={f.notas} onChange={e => s({...f,notas:e.target.value})}
