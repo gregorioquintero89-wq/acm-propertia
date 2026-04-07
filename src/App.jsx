@@ -576,9 +576,19 @@ const P1 = ({ f, s }) => {
           />
         </div>
 
-        {/* Dirección / Barrio — Google Places */}
+        {/* Ciudad — se llena automático con Places o manual */}
         <div>
-          <Label req>Barrio / Zona / Dirección</Label>
+          <Label req>Ciudad</Label>
+          <Inp
+            value={f.ciudad}
+            onChange={v => s({ ...f, ciudad:v })}
+            placeholder="Ej: Medellín, Bogotá, Ciudad de México..."
+          />
+        </div>
+
+        {/* Barrio — Google Places Autocomplete */}
+        <div>
+          <Label req>Barrio</Label>
           <PlacesInput
             value={f.barrio}
             onChange={v => s({ ...f, barrio:v })}
@@ -586,20 +596,20 @@ const P1 = ({ f, s }) => {
               ...f,
               barrio,
               ciudad: ciudad || f.ciudad,
-              pais:   PAISES.find(p => p.v === pais || p.l.includes(pais)) ? pais : (f.pais || "Colombia"),
+              pais: PAISES.find(p => p.v === pais || p.l.includes(pais)) ? pais : (f.pais || "Colombia"),
             })}
             pais={f.pais || "Colombia"}
-            placeholder="Ej: El Poblado, Laureles, Av. El Dorado..."
+            placeholder="Ej: El Poblado, Usaquén, Laureles..."
           />
         </div>
 
-        {/* Ciudad — se llena automático con Places o se escribe manual */}
+        {/* Dirección — opcional */}
         <div>
-          <Label req>Ciudad</Label>
+          <Label>Dirección <span style={{ color:C.gray, fontWeight:400, textTransform:"none", letterSpacing:0 }}>(opcional)</span></Label>
           <Inp
-            value={f.ciudad}
-            onChange={v => s({ ...f, ciudad:v })}
-            placeholder="Se llena al seleccionar barrio, o escribe aquí"
+            value={f.direccion || ""}
+            onChange={v => s({ ...f, direccion:v })}
+            placeholder="Ej: Cra 43A #7-50, Torre 2 Apto 301"
           />
         </div>
 
