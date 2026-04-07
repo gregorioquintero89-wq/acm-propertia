@@ -1001,8 +1001,8 @@ export default function App() {
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
               <div style={{ width:42, height:42, background:`linear-gradient(135deg,${C.green},${C.greenD})`, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:`0 4px 16px ${C.greenGlow}` }}>🏠</div>
               <div>
-                <div style={{ fontSize:17, fontWeight:800, color:C.white, lineHeight:1, letterSpacing:-.5 }}>ACM Pro</div>
-                <div style={{ fontSize:10, color:C.green, letterSpacing:2, textTransform:"uppercase" }}>Powered by Claude AI</div>
+                <div style={{ fontSize:17, fontWeight:800, color:C.white, lineHeight:1, letterSpacing:-.5 }}>Análisis Comparativo de Mercado</div>
+                <div style={{ fontSize:10, color:C.green, letterSpacing:2, textTransform:"uppercase" }}>Propertia Realty · Powered by Claude AI</div>
               </div>
             </div>
             {!result && !loading && (
