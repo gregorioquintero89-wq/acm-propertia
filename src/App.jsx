@@ -920,7 +920,7 @@ const P7 = ({ f, s }) => (
 // ── LOADING ───────────────────────────────────────────────────────────────────
 const Loading = () => {
   const [step, setStep] = useState(0)
-  const steps = ["Procesando datos de la propiedad...","Consultando mercado colombiano 2025...","Calculando comparables en la zona...","Generando valoración con Claude AI...","Guardando en base de datos..."]
+  const steps = ["Procesando datos de la propiedad...","Consultando mercado colombiano 2025...","Calculando comparables en la zona...","Generando valoración profesional...","Finalizando análisis..."]
   useState(() => { const iv = setInterval(() => setStep(s => Math.min(s+1,4)), 1400); return () => clearInterval(iv) })
   return (
     <div style={{ textAlign:"center", padding:"60px 24px" }}>
@@ -929,7 +929,7 @@ const Loading = () => {
         <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontSize:28 }}>🏠</div>
       </div>
       <h2 style={{ margin:"0 0 6px", fontSize:22, color:C.white, fontWeight:800 }}>Analizando el mercado</h2>
-      <p style={{ margin:"0 0 28px", fontSize:14, color:C.gray }}>Claude AI está generando tu análisis profesional</p>
+      <p style={{ margin:"0 0 28px", fontSize:14, color:C.gray }}>Generando tu análisis profesional de mercado...</p>
       <div style={{ display:"grid", gap:8, maxWidth:300, margin:"0 auto" }}>
         {steps.map((st, i) => (
           <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px", borderRadius:9, background:i<=step ? C.bg3 : "transparent", border:`1px solid ${i<=step ? C.border : "transparent"}` }}>
@@ -975,8 +975,7 @@ const Results = ({ form, result, onReset, saved }) => {
         </div>
         <div style={{ marginTop:14, display:"flex", gap:8, flexWrap:"wrap" }}>
           <span style={{ background:`${C.green}15`, border:`1px solid ${C.green}40`, borderRadius:20, padding:"3px 12px", fontSize:10, color:C.green }}>✅ Válido 90 días</span>
-          {saved && <span style={{ background:`${C.green}15`, border:`1px solid ${C.green}40`, borderRadius:20, padding:"3px 12px", fontSize:10, color:C.green }}>💾 Guardado en Supabase</span>}
-          <span style={{ background:C.bg3, border:`1px solid ${C.border}`, borderRadius:20, padding:"3px 12px", fontSize:10, color:C.gray }}>🤖 Generado con Claude AI</span>
+          {result._meta?.fuentes && <span style={{ background:C.bg3, border:`1px solid ${C.border}`, borderRadius:20, padding:"3px 12px", fontSize:10, color:C.gray }}>📊 Fuentes: {result._meta.fuentes}</span>}
         </div>
       </div>
 
@@ -1071,6 +1070,15 @@ const Results = ({ form, result, onReset, saved }) => {
         <div style={{ marginTop:14, padding:"10px 14px", background:C.bg3, borderRadius:9, border:`1px solid ${C.border}`, fontSize:12.5, color:C.gray }}>
           <strong style={{ color:C.grayL }}>Promedio:</strong> {fmtM2(Math.round(comps.reduce((a,c)=>a+c.precioM2,0)/Math.max(comps.length,1)))} &nbsp;·&nbsp; <strong style={{ color:C.green }}>Tu propiedad:</strong> {fmtM2(result.precio_m2_base)}
         </div>
+        {result._meta && (
+          <div style={{ marginTop:12, padding:"10px 14px", background:C.bg3, borderRadius:9, border:`1px solid ${C.border}`, fontSize:11.5, color:C.gray }}>
+            <strong style={{ color:C.grayL }}>📊 Fuentes de datos:</strong>{" "}
+            {result._meta.fuentes || "Análisis de mercado"} &nbsp;·&nbsp;
+            {result._meta.comparables_fresh > 0 && <span>{result._meta.comparables_fresh} en tiempo real &nbsp;·&nbsp;</span>}
+            {result._meta.comparables_db > 0 && <span>{result._meta.comparables_db} históricos &nbsp;·&nbsp;</span>}
+            {result._meta.precio_m2_real && <span>$/m² mercado real: <strong style={{ color:C.green }}>{new Intl.NumberFormat("es-CO").format(result._meta.precio_m2_real)}</strong></span>}
+          </div>
+        )}
       </Card>}
 
       {/* TAB GRÁFICOS */}
@@ -1212,7 +1220,7 @@ export default function App() {
               <div style={{ width:42, height:42, background:`linear-gradient(135deg,${C.green},${C.greenD})`, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:`0 4px 16px ${C.greenGlow}` }}>🏠</div>
               <div>
                 <div style={{ fontSize:17, fontWeight:800, color:C.white, lineHeight:1, letterSpacing:-.5 }}>Análisis Comparativo de Mercado</div>
-                <div style={{ fontSize:10, color:C.green, letterSpacing:2, textTransform:"uppercase" }}>Propertia Realty · Powered by Claude AI</div>
+                <div style={{ fontSize:10, color:C.green, letterSpacing:2, textTransform:"uppercase" }}>Propertia Realty · ACM Profesional</div>
               </div>
             </div>
             {!result && !loading && (
