@@ -959,7 +959,10 @@ const Results = ({ form, result, onReset, saved }) => {
         <div style={{ fontSize:10, color:C.green, fontWeight:700, letterSpacing:3, textTransform:"uppercase", marginBottom:8 }}>✦ Análisis Comparativo de Mercado · IA</div>
         <h1 style={{ margin:"0 0 4px", fontSize:22, color:C.white, fontWeight:800 }}>{form.tipo} · {form.barrio}, {form.ciudad}{form.pais && form.pais !== "Colombia" ? `, ${form.pais}` : ""}</h1>
         <div style={{ fontSize:12.5, color:C.gray, marginBottom:20 }}>
-          {form.areaConstruida}m² · {form.dormitorios||2} hab · {form.banosC||1} baños · Estrato {form.estrato} · {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}
+          {form.areaConstruida || form.areaTerreno}m²
+          {TIPO_GRUPO[form.tipo] === "residencial" && <> · {form.dormitorios||2} hab · {form.banosC||1} baños</>}
+          {form.estrato > 0 && <> · Estrato {form.estrato}</>}
+          {" · "}{new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
           <div style={{ background:"rgba(0,208,132,.08)", borderRadius:12, padding:"14px 16px", border:`1px solid ${C.green}20` }}>
