@@ -479,73 +479,67 @@ const ProgressBar = ({ current }) => (
 )
 
 const PlacesInput = ({ value, onChange, onPlace, pais, placeholder }) => {
-  const inputRef  = useRef(null)
-  const acRef     = useRef(null)
-  const [ready, setReady] = useState(!!window.google?.maps?.places)
+  const inputRef   = useRef(null)
+  const acRef      = useRef(null)
+  const onPlaceRef = useRef(onPlace)
+  onPlaceRef.current = onPlace
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     loadPlacesScript().then(() => setReady(true))
   }, [])
 
   useEffect(() => {
-    if (!ready || !inputRef.current) return
-    if (acRef.current) return // already initialized
-
-    const countryCode = PAIS_CODE[pais] || "co"
-    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-      types: ["geocode"],
-      componentRestrictions: { country: countryCode },
-      fields: ["address_components", "formatted_address"],
-    })
-
-    ac.addListener("place_changed", () => {
-      const place = ac.getPlace()
-      if (!place.address_components) return
-
-      let barrio = "", ciudad = "", paisDetectado = ""
-      for (const comp of place.address_components) {
-        const t = comp.types
-        if (!barrio && (t.includes("neighborhood") || t.includes("sublocality_level_1") || t.includes("sublocality"))) {
-          barrio = comp.long_name
+    if (!ready || !inputRef.current || acRef.current) return
+    try {
+      const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ["geocode"],
+        componentRestrictions: { country: PAIS_CODE[pais] || "co" },
+        fields: ["address_components", "formatted_address"],
+      })
+      ac.addListener("place_changed", () => {
+        const place = ac.getPlace()
+        if (!place?.address_components) return
+        let barrio = "", ciudad = "", paisDet = ""
+        for (const comp of place.address_components) {
+          const t = comp.types
+          if (!barrio && (t.includes("neighborhood") || t.includes("sublocality_level_1") || t.includes("sublocality")))
+            barrio = comp.long_name
+          if (!ciudad && (t.includes("locality") || t.includes("administrative_area_level_2")))
+            ciudad = comp.long_name
+          if (t.includes("country")) paisDet = comp.long_name
         }
-        if (!ciudad && (t.includes("locality") || t.includes("administrative_area_level_2"))) {
-          ciudad = comp.long_name
-        }
-        if (t.includes("country")) paisDetectado = comp.long_name
-      }
+        if (!barrio) barrio = place.formatted_address?.split(",")[0] || ""
+        onChange(barrio)
+        onPlaceRef.current({ barrio, ciudad: ciudad || "", pais: paisDet || pais })
+      })
+      acRef.current = ac
+    } catch(e) { console.error("Places init:", e) }
+  }, [ready])
 
-      // Si no encontró barrio, usa la dirección parcial limpia
-      if (!barrio) barrio = place.formatted_address?.split(",")[0] || ""
-
-      onChange(barrio)
-      onPlace({ barrio, ciudad: ciudad || pais, pais: paisDetectado || pais })
-    })
-
-    acRef.current = ac
-  }, [ready, pais])
-
-  // Si cambia el país, reinicializar el autocomplete con nueva restricción de país
   useEffect(() => {
-    if (!acRef.current || !window.google?.maps?.places) return
-    acRef.current.setComponentRestrictions({ country: PAIS_CODE[pais] || "co" })
+    if (acRef.current) acRef.current.setComponentRestrictions({ country: PAIS_CODE[pais] || "co" })
   }, [pais])
+
+  const inputStyle = {
+    width:"100%", padding:"11px 14px", borderRadius:8,
+    border:`1px solid ${value ? C.green+"60" : C.border}`,
+    fontSize:14, color: value ? C.white : C.gray,
+    background: C.bg3, outline:"none", transition:"border .2s",
+    boxSizing:"border-box",
+  }
 
   return (
     <input
       ref={inputRef}
+      type="search"
       value={value || ""}
       onChange={e => onChange(e.target.value)}
-      placeholder={ready ? (placeholder || "Escribe la dirección o barrio...") : "Cargando Google Places..."}
-      autoComplete="off"
+      placeholder={placeholder || "Escribe el barrio..."}
+      autoComplete="new-password"
       autoCorrect="off"
       spellCheck="false"
-      style={{
-        width:"100%", padding:"11px 14px", borderRadius:8,
-        border:`1px solid ${value ? C.green+"60" : C.border}`,
-        fontSize:14, color: value ? C.white : C.gray,
-        background: C.bg3, outline:"none", transition:"border .2s",
-        boxSizing:"border-box",
-      }}
+      style={inputStyle}
     />
   )
 }
