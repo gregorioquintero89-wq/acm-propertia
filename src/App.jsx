@@ -59,6 +59,22 @@ const TIPOS_PROPIEDAD = [
   { v:"Hotel",            l:"Hotel / Hostal" },
   { v:"Consultorio",      l:"Consultorio" },
 ]
+
+const TIPO_GRUPO = {
+  "Apartamento":        "residencial",
+  "Apartaestudio":      "residencial",
+  "Casa":               "residencial",
+  "Casa en condominio": "residencial",
+  "Penthouse":          "residencial",
+  "Local comercial":    "comercial",
+  "Oficina":            "comercial",
+  "Hotel":              "comercial",
+  "Consultorio":        "comercial",
+  "Bodega":             "industrial",
+  "Lote":               "terreno",
+  "Finca":              "terreno",
+}
+
 const BARRIOS = {
   "Bogotá": [
     "Usaquén","Santa Bárbara","Cedritos","Niza","Chicó","El Retiro","La Cabrera","Rosales",
@@ -562,67 +578,114 @@ const P2 = ({ f, s }) => (
   </div>
 )
 
-const P3 = ({ f, s }) => (
-  <div>
-    <PhaseTitle icon="🛋️" title="Distribución y Acabados" sub="Los interiores que determinan el valor."/>
-    <div style={{ display:"grid", gap:22 }}>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
-        {[{l:"Dormitorios",k:"dormitorios",min:1,max:8},{l:"Baños completos",k:"banosC",min:0,max:6},{l:"Baños sociales",k:"banosS",min:0,max:3}].map(({l,k,min,max}) => (
-          <div key={k} style={{ textAlign:"center" }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.gray, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>{l}</div>
-            <Counter value={f[k]||min} onChange={v => s({...f,[k]:v})} min={min} max={max}/>
-          </div>
-        ))}
-      </div>
-      <GridSel label="Tipo de acabados *" value={f.acabados} onChange={v => s({...f,acabados:v})} cols={2} items={[
-        {v:"basicos",l:"Básicos",icon:"🔧"},{v:"estandar",l:"Estándar",icon:"🏠"},
-        {v:"premium",l:"Premium",icon:"✨"},{v:"lujo",l:"Lujo",icon:"💎"}
-      ]}/>
-      <GridSel label="Tipo de cocina" value={f.cocina} onChange={v => s({...f,cocina:v})} cols={3} items={[
-        {v:"cerrada",l:"Cerrada"},{v:"abierta",l:"Abierta/Integral"},{v:"americana",l:"Americana"}
-      ]}/>
-      <GridSel label="Altura de techos" value={f.altTechos} onChange={v => s({...f,altTechos:v})} cols={3} items={[
-        {v:"estandar",l:"Estándar ~2.5m"},{v:"altos",l:"Altos ~3m+"},{v:"doble",l:"Doble altura"}
-      ]}/>
-      <div>
-        <Toggle label="¿Tiene balcón / terraza?" value={!!f.balcon} onChange={v => s({...f,balcon:v})}/>
-        {f.balcon && <div style={{ marginTop:10, paddingLeft:14, borderLeft:`2px solid ${C.green}` }}><Label>Área del balcón</Label><Inp type="number" value={f.balconM2} onChange={v => s({...f,balconM2:v})} placeholder="Ej: 12" unit="m²"/></div>}
-        <Toggle label="¿Tiene sótano / semisótano?" value={!!f.sotano} onChange={v => s({...f,sotano:v})}/>
+function P3({ f, s }) {
+  const grupo = TIPO_GRUPO[f.tipo] || "residencial"
+
+  if (grupo === "terreno") return (
+    <div>
+      <PhaseTitle icon="🌱" title="Características del Terreno" sub="Área y ubicación son los factores principales para valorar."/>
+      <div style={{ background:C.bg3, border:`1px solid ${C.border}`, borderRadius:12, padding:24, textAlign:"center", color:C.grayL, lineHeight:1.7 }}>
+        <div style={{ fontSize:32, marginBottom:12 }}>✅</div>
+        <p style={{ margin:0, fontWeight:600, color:C.white }}>Los datos básicos son suficientes para este tipo.</p>
+        <p style={{ margin:"8px 0 0", fontSize:13 }}>Para lotes y fincas el valor depende del área, ubicación y zonificación. Continúa al siguiente paso.</p>
       </div>
     </div>
-  </div>
-)
+  )
 
-const P4 = ({ f, s }) => (
-  <div>
-    <PhaseTitle icon="🏊" title="Amenidades y Servicios" sub="Pueden aumentar el valor entre 8% y 20%."/>
-    <div style={{ display:"grid", gap:2 }}>
-      <Toggle label="🏊 Piscina" value={!!f.piscina} onChange={v => s({...f,piscina:v})}/>
-      {f.piscina && <div style={{ paddingLeft:14, borderLeft:`2px solid ${C.green}`, marginBottom:6, paddingTop:8 }}><Sel value={f.piscinaT} onChange={v => s({...f,piscinaT:v})} options={["Cubierta","Descubierta","Sin fin / Infinity"]} placeholder="Tipo de piscina"/></div>}
-      <Toggle label="💪 Gimnasio" value={!!f.gimnasio} onChange={v => s({...f,gimnasio:v})}/>
-      <Toggle label="🎉 Salón social / Eventos" value={!!f.salon} onChange={v => s({...f,salon:v})}/>
-      <Toggle label="🧒 Parque infantil" value={!!f.parque} onChange={v => s({...f,parque:v})}/>
-      <Toggle label="🧖 Sauna / Turco" value={!!f.sauna} onChange={v => s({...f,sauna:v})}/>
-      <Toggle label="🛗 Ascensor" value={!!f.ascensor} onChange={v => s({...f,ascensor:v})}/>
-      <div style={{ marginTop:16, display:"grid", gap:14 }}>
-        <div><Label>Planta eléctrica</Label><Sel value={f.plantaElec} onChange={v => s({...f,plantaElec:v})} options={["Total","Parcial","No tiene"]} placeholder="Seleccionar..."/></div>
+  if (grupo === "comercial") return (
+    <div>
+      <PhaseTitle icon="🏢" title="Detalles Comerciales" sub="Acabados y administración definen el valor de una propiedad comercial."/>
+      <div style={{ display:"grid", gap:22 }}>
+        <GridSel label="Estado de los acabados" value={f.acabados} onChange={v => s({...f,acabados:v})} cols={2} items={[
+          {v:"basicos",l:"Básicos",icon:"🔧"},{v:"estandar",l:"Estándar",icon:"🏠"},
+          {v:"premium",l:"Premium",icon:"✨"},{v:"lujo",l:"Lujo",icon:"💎"}
+        ]}/>
+        <div><Label>Administración mensual</Label><Inp type="number" value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 450000 — 0 si no aplica" unit="COP"/></div>
+      </div>
+    </div>
+  )
+
+  if (grupo === "industrial") return (
+    <div>
+      <PhaseTitle icon="🏭" title="Detalles de la Bodega" sub="Estado y características operativas de la bodega."/>
+      <div style={{ display:"grid", gap:22 }}>
+        <GridSel label="Estado actual" value={f.estado} onChange={v => s({...f,estado:v})} cols={2} items={[
+          {v:"Excelente",l:"✨ Excelente"},{v:"Bueno",l:"👍 Bueno"},
+          {v:"Regular",l:"⚠️ Regular"},{v:"Para remodelar",l:"🔨 Para remodelar"}
+        ]}/>
+        <GridSel label="Altura libre de la bodega" value={f.altBodega} onChange={v => s({...f,altBodega:v})} cols={3} items={[
+          {v:"hasta6m",l:"Hasta 6m"},{v:"6a10m",l:"6 – 10m"},{v:"mas10m",l:"Más de 10m"}
+        ]}/>
         <div>
-          <Label>Seguridad</Label>
+          <Label>Muelles de cargue</Label>
           <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:6 }}>
-            {["Portería 24/7","Cámaras","Acceso tarjeta","Vigilancia privada","Citófono"].map(sg => {
-              const sel = (f.seguridad||[]).includes(sg)
-              return <Chip key={sg} label={sg} active={sel} onClick={() => {
-                const arr = f.seguridad||[]
-                s({...f, seguridad: sel ? arr.filter(x=>x!==sg) : [...arr,sg]})
-              }}/>
+            {["Muelle cubierto","Muelle a nivel","Sin muelle"].map(m => {
+              const sel = f.muellesT === m
+              return <Chip key={m} label={m} active={sel} onClick={() => s({...f, muellesT:m})}/>
             })}
           </div>
         </div>
-        <div><Label>Administración mensual</Label><Inp type="number" value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 350000" unit="COP"/></div>
       </div>
     </div>
-  </div>
-)
+  )
+
+  // ── RESIDENCIAL (default) ────────────────────────────────────────────────
+  return (
+    <div>
+      <PhaseTitle icon="🛋️" title="Distribución y Acabados" sub="Los interiores que determinan el valor."/>
+      <div style={{ display:"grid", gap:22 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
+          {[{l:"Dormitorios",k:"dormitorios",min:1,max:8},{l:"Baños completos",k:"banosC",min:0,max:6},{l:"Baños sociales",k:"banosS",min:0,max:3}].map(({l,k,min,max}) => (
+            <div key={k} style={{ textAlign:"center" }}>
+              <div style={{ fontSize:11, fontWeight:700, color:C.gray, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>{l}</div>
+              <Counter value={f[k]||min} onChange={v => s({...f,[k]:v})} min={min} max={max}/>
+            </div>
+          ))}
+        </div>
+        <GridSel label="Nivel de acabados *" value={f.acabados} onChange={v => s({...f,acabados:v})} cols={2} items={[
+          {v:"basicos",l:"Básicos",icon:"🔧"},{v:"estandar",l:"Estándar",icon:"🏠"},
+          {v:"premium",l:"Premium",icon:"✨"},{v:"lujo",l:"Lujo",icon:"💎"}
+        ]}/>
+      </div>
+    </div>
+  )
+}
+
+function P4({ f, s }) {
+  const grupo = TIPO_GRUPO[f.tipo] || "residencial"
+  return (
+    <div>
+      <PhaseTitle icon="🏊" title="Amenidades y Servicios" sub="Pueden aumentar el valor entre 8% y 20%."/>
+      <div style={{ display:"grid", gap:2 }}>
+        <Toggle label="🏊 Piscina" value={!!f.piscina} onChange={v => s({...f,piscina:v})}/>
+        {f.piscina && <div style={{ paddingLeft:14, borderLeft:`2px solid ${C.green}`, marginBottom:6, paddingTop:8 }}><Sel value={f.piscinaT} onChange={v => s({...f,piscinaT:v})} options={["Cubierta","Descubierta","Sin fin / Infinity"]} placeholder="Tipo de piscina"/></div>}
+        <Toggle label="💪 Gimnasio" value={!!f.gimnasio} onChange={v => s({...f,gimnasio:v})}/>
+        <Toggle label="🎉 Salón social / Eventos" value={!!f.salon} onChange={v => s({...f,salon:v})}/>
+        <Toggle label="🧒 Parque infantil" value={!!f.parque} onChange={v => s({...f,parque:v})}/>
+        <Toggle label="🧖 Sauna / Turco" value={!!f.sauna} onChange={v => s({...f,sauna:v})}/>
+        <Toggle label="🛗 Ascensor" value={!!f.ascensor} onChange={v => s({...f,ascensor:v})}/>
+        <div style={{ marginTop:16, display:"grid", gap:14 }}>
+          <div><Label>Planta eléctrica</Label><Sel value={f.plantaElec} onChange={v => s({...f,plantaElec:v})} options={["Total","Parcial","No tiene"]} placeholder="Seleccionar..."/></div>
+          <div>
+            <Label>Seguridad</Label>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:6 }}>
+              {["Portería 24/7","Cámaras","Acceso tarjeta","Vigilancia privada","Citófono"].map(sg => {
+                const sel = (f.seguridad||[]).includes(sg)
+                return <Chip key={sg} label={sg} active={sel} onClick={() => {
+                  const arr = f.seguridad||[]
+                  s({...f, seguridad: sel ? arr.filter(x=>x!==sg) : [...arr,sg]})
+                }}/>
+              })}
+            </div>
+          </div>
+          {grupo !== "comercial" && (
+            <div><Label>Administración mensual</Label><Inp type="number" value={f.adminM} onChange={v => s({...f,adminM:v})} placeholder="Ej: 350000" unit="COP"/></div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const P5 = ({ f, s }) => (
   <div>
