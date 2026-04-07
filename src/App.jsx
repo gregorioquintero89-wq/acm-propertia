@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell,
@@ -73,6 +73,31 @@ const TIPO_GRUPO = {
   "Bodega":             "industrial",
   "Lote":               "terreno",
   "Finca":              "terreno",
+}
+
+const PAIS_CODE = {
+  "Colombia":"co","México":"mx","Argentina":"ar","Chile":"cl",
+  "Perú":"pe","Ecuador":"ec","Uruguay":"uy","Panamá":"pa",
+}
+
+const PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY
+
+let placesScriptLoaded = false
+function loadPlacesScript() {
+  if (!PLACES_KEY) return Promise.resolve()
+  if (window.google?.maps?.places) return Promise.resolve()
+  if (placesScriptLoaded) {
+    return new Promise(res => {
+      const check = setInterval(() => { if (window.google?.maps?.places) { clearInterval(check); res() } }, 50)
+    })
+  }
+  placesScriptLoaded = true
+  return new Promise(res => {
+    const s = document.createElement("script")
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${PLACES_KEY}&libraries=places&language=es`
+    s.async = true; s.onload = res
+    document.head.appendChild(s)
+  })
 }
 
 const BARRIOS = {
@@ -453,6 +478,75 @@ const ProgressBar = ({ current }) => (
   </div>
 )
 
+const PlacesInput = ({ value, onChange, onPlace, pais, placeholder }) => {
+  const inputRef  = useRef(null)
+  const acRef     = useRef(null)
+  const [ready, setReady] = useState(!!window.google?.maps?.places)
+
+  useEffect(() => {
+    loadPlacesScript().then(() => setReady(true))
+  }, [])
+
+  useEffect(() => {
+    if (!ready || !inputRef.current) return
+    if (acRef.current) return // already initialized
+
+    const countryCode = PAIS_CODE[pais] || "co"
+    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+      types: ["geocode"],
+      componentRestrictions: { country: countryCode },
+      fields: ["address_components", "formatted_address"],
+    })
+
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace()
+      if (!place.address_components) return
+
+      let barrio = "", ciudad = "", paisDetectado = ""
+      for (const comp of place.address_components) {
+        const t = comp.types
+        if (!barrio && (t.includes("neighborhood") || t.includes("sublocality_level_1") || t.includes("sublocality"))) {
+          barrio = comp.long_name
+        }
+        if (!ciudad && (t.includes("locality") || t.includes("administrative_area_level_2"))) {
+          ciudad = comp.long_name
+        }
+        if (t.includes("country")) paisDetectado = comp.long_name
+      }
+
+      // Si no encontró barrio, usa la dirección parcial limpia
+      if (!barrio) barrio = place.formatted_address?.split(",")[0] || ""
+
+      onChange(barrio)
+      onPlace({ barrio, ciudad: ciudad || pais, pais: paisDetectado || pais })
+    })
+
+    acRef.current = ac
+  }, [ready, pais])
+
+  // Si cambia el país, reinicializar el autocomplete con nueva restricción de país
+  useEffect(() => {
+    if (!acRef.current || !window.google?.maps?.places) return
+    acRef.current.setComponentRestrictions({ country: PAIS_CODE[pais] || "co" })
+  }, [pais])
+
+  return (
+    <input
+      ref={inputRef}
+      value={value || ""}
+      onChange={e => onChange(e.target.value)}
+      placeholder={ready ? (placeholder || "Escribe la dirección o barrio...") : "Cargando Google Places..."}
+      style={{
+        width:"100%", padding:"11px 14px", borderRadius:8,
+        border:`1px solid ${value ? C.green+"60" : C.border}`,
+        fontSize:14, color: value ? C.white : C.gray,
+        background: C.bg3, outline:"none", transition:"border .2s",
+        boxSizing:"border-box",
+      }}
+    />
+  )
+}
+
 const PhaseTitle = ({ icon, title, sub }) => (
   <div style={{ marginBottom:24 }}>
     <div style={{ fontSize:32, lineHeight:1, marginBottom:10 }}>{icon}</div>
@@ -463,10 +557,6 @@ const PhaseTitle = ({ icon, title, sub }) => (
 
 // ── 7 PHASES ──────────────────────────────────────────────────────────────────
 const P1 = ({ f, s }) => {
-  const ciudades = CIUDADES_POR_PAIS[f.pais] || []
-  const barrios  = BARRIOS[f.ciudad] || []
-  const esColombia = !f.pais || f.pais === "Colombia"
-
   return (
     <div>
       <PhaseTitle icon="📍" title="Ubicación y Categoría" sub="¿Dónde está la propiedad y qué tipo es?"/>
@@ -477,36 +567,35 @@ const P1 = ({ f, s }) => {
           <Label req>País</Label>
           <Sel
             value={f.pais || "Colombia"}
-            onChange={v => s({ ...f, pais:v, ciudad:"", barrio:"", estrato: v==="Colombia" ? f.estrato : undefined })}
+            onChange={v => s({ ...f, pais:v, ciudad:"", barrio:"" })}
             options={PAISES}
             placeholder="Selecciona país"
           />
         </div>
 
-        {/* Ciudad */}
+        {/* Dirección / Barrio — Google Places */}
         <div>
-          <Label req>Ciudad</Label>
-          <Sel
-            value={f.ciudad}
-            onChange={v => s({ ...f, ciudad:v, barrio:"" })}
-            options={ciudades}
-            placeholder="Selecciona ciudad"
-          />
-        </div>
-
-        {/* Zona / Barrio */}
-        <div>
-          <Label req>Zona / Barrio / Colonia</Label>
-          <SearchSelect
+          <Label req>Barrio / Zona / Dirección</Label>
+          <PlacesInput
             value={f.barrio}
             onChange={v => s({ ...f, barrio:v })}
-            options={barrios}
-            placeholder={esColombia ? "Escribe el nombre del barrio" : "Escribe la zona o colonia"}
-            disabled={!f.ciudad}
+            onPlace={({ barrio, ciudad, pais }) => s({
+              ...f,
+              barrio,
+              ciudad: ciudad || f.ciudad,
+              pais:   PAISES.find(p => p.v === pais || p.l.includes(pais)) ? pais : (f.pais || "Colombia"),
+            })}
+            pais={f.pais || "Colombia"}
+            placeholder="Ej: El Poblado, Laureles, Av. El Dorado..."
           />
+          {f.ciudad && (
+            <div style={{ fontSize:12, color:C.gray, marginTop:5 }}>
+              📍 {f.ciudad}{f.pais && f.pais !== "Colombia" ? `, ${f.pais}` : ""}
+            </div>
+          )}
         </div>
 
-        {/* Tipo de propiedad — dropdown */}
+        {/* Tipo de propiedad */}
         <div>
           <Label req>Tipo de propiedad</Label>
           <Sel
@@ -516,25 +605,6 @@ const P1 = ({ f, s }) => {
             placeholder="Selecciona tipo de propiedad"
           />
         </div>
-
-        {/* Estrato — solo Colombia */}
-        {esColombia && (
-          <div>
-            <Label req>Estrato socioeconómico</Label>
-            <div style={{ display:"flex", gap:8 }}>
-              {[1,2,3,4,5,6].map(e => (
-                <div key={e} onClick={() => s({...f, estrato:e})} style={{
-                  flex:1, padding:"11px 0", borderRadius:9, textAlign:"center", cursor:"pointer",
-                  border:`1px solid ${f.estrato===e ? C.green : C.border}`,
-                  background: f.estrato===e ? C.green+"20" : C.bg3,
-                  color: f.estrato===e ? C.green : C.gray,
-                  fontWeight:700, fontSize:15, transition:"all .2s",
-                  boxShadow: f.estrato===e ? `0 0 10px ${C.greenGlow}` : "none"
-                }}>{e}</div>
-              ))}
-            </div>
-          </div>
-        )}
 
       </div>
     </div>
