@@ -133,12 +133,21 @@ USA ESTOS DATOS REALES como base principal para calcular el precio. No los ignor
     : `
 NOTA: No se encontraron comparables en tiempo real. Usa tu conocimiento actualizado del mercado colombiano 2024-2025 para estimar precios, siendo conservador.`
 
-  return `Eres un tasador inmobiliario colombiano experto con 20 años de experiencia en Cali, Bogotá y Medellín.
-Genera un ACM (Análisis Comparativo de Mercado) profesional con datos PRECISOS.
+  const pais = formData.pais || "Colombia"
+  const moneda = {
+    "Colombia": "COP", "México": "MXN", "Argentina": "ARS",
+    "Chile": "CLP", "Perú": "PEN", "Ecuador": "USD",
+    "Uruguay": "UYU", "Panamá": "USD"
+  }[pais] || "USD"
+
+  return `Eres un tasador inmobiliario experto con 20 años de experiencia en mercados de ${pais} y LATAM.
+Genera un ACM (Análisis Comparativo de Mercado) profesional con datos PRECISOS para el mercado de ${pais}.
+Usa precios en ${moneda}. Si el país no es Colombia, usa tu conocimiento actualizado del mercado inmobiliario local.
 ${comparablesSection}
 
 PROPIEDAD A VALUAR:
-- Tipo: ${formData.tipo} en ${formData.barrio}, ${formData.ciudad} · Estrato ${formData.estrato}
+- País: ${pais}
+- Tipo: ${formData.tipo} en ${formData.barrio}, ${formData.ciudad}${formData.estrato ? ` · Estrato ${formData.estrato}` : ""}
 - Área construida: ${formData.areaConstruida}m²${formData.areaTerreno ? ` / Terreno: ${formData.areaTerreno}m²` : ""}
 - Antigüedad: ${formData.antiguedad} años · Estado: ${formData.estado}
 - Remodelado: ${formData.remodelado === "si" ? `Sí (${formData.remodelAnios} años, áreas: ${(formData.remodelAreas||[]).join(", ")})` : "No"}

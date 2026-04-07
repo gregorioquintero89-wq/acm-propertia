@@ -20,7 +20,45 @@ const C = {
   gold:    "#F5C842",
 }
 
-const CIUDADES = ["Bogotá","Medellín","Cali","Barranquilla","Cartagena","Bucaramanga","Pereira","Manizales"]
+const PAISES = [
+  { v:"Colombia",   l:"🇨🇴 Colombia" },
+  { v:"México",     l:"🇲🇽 México" },
+  { v:"Argentina",  l:"🇦🇷 Argentina" },
+  { v:"Chile",      l:"🇨🇱 Chile" },
+  { v:"Perú",       l:"🇵🇪 Perú" },
+  { v:"Ecuador",    l:"🇪🇨 Ecuador" },
+  { v:"Uruguay",    l:"🇺🇾 Uruguay" },
+  { v:"Panamá",     l:"🇵🇦 Panamá" },
+]
+
+const CIUDADES_POR_PAIS = {
+  "Colombia":  ["Bogotá","Medellín","Cali","Barranquilla","Cartagena","Bucaramanga","Pereira","Manizales"],
+  "México":    ["Ciudad de México","Guadalajara","Monterrey","Puebla","Tijuana","Cancún","Querétaro","Mérida","León","San Luis Potosí"],
+  "Argentina": ["Buenos Aires","Córdoba","Rosario","Mendoza","La Plata","Mar del Plata","Tucumán","Salta","Santa Fe","Neuquén"],
+  "Chile":     ["Santiago","Viña del Mar","Valparaíso","Concepción","La Serena","Antofagasta","Temuco","Rancagua","Iquique","Puerto Montt"],
+  "Perú":      ["Lima","Arequipa","Trujillo","Chiclayo","Cusco","Iquitos","Piura","Huancayo","Tacna","Pucallpa"],
+  "Ecuador":   ["Quito","Guayaquil","Cuenca","Ambato","Manta","Santo Domingo","Machala","Portoviejo","Loja","Ibarra"],
+  "Uruguay":   ["Montevideo","Salto","Ciudad de la Costa","Paysandú","Las Piedras","Rivera","Maldonado","Tacuarembó","Melo","Mercedes"],
+  "Panamá":    ["Ciudad de Panamá","San Miguelito","Arraiján","La Chorrera","Colón","David","Santiago","Chitré","Penonomé","Las Tablas"],
+}
+
+// Para compatibilidad con el código existente
+const CIUDADES = CIUDADES_POR_PAIS["Colombia"]
+
+const TIPOS_PROPIEDAD = [
+  { v:"Apartamento",      l:"Apartamento" },
+  { v:"Apartaestudio",    l:"Apartaestudio" },
+  { v:"Casa",             l:"Casa" },
+  { v:"Casa en condominio", l:"Casa en condominio" },
+  { v:"Penthouse",        l:"Penthouse / PH" },
+  { v:"Lote",             l:"Lote / Terreno" },
+  { v:"Finca",            l:"Finca / Rural" },
+  { v:"Local comercial",  l:"Local comercial" },
+  { v:"Oficina",          l:"Oficina" },
+  { v:"Bodega",           l:"Bodega / Industrial" },
+  { v:"Hotel",            l:"Hotel / Hostal" },
+  { v:"Consultorio",      l:"Consultorio" },
+]
 const BARRIOS = {
   "Bogotá": [
     "Usaquén","Santa Bárbara","Cedritos","Niza","Chicó","El Retiro","La Cabrera","Rosales",
@@ -409,49 +447,79 @@ const PhaseTitle = ({ icon, title, sub }) => (
 
 // ── 7 PHASES ──────────────────────────────────────────────────────────────────
 const P1 = ({ f, s }) => {
-  const barrios = BARRIOS[f.ciudad] || []
+  const ciudades = CIUDADES_POR_PAIS[f.pais] || []
+  const barrios  = BARRIOS[f.ciudad] || []
+  const esColombia = !f.pais || f.pais === "Colombia"
+
   return (
     <div>
       <PhaseTitle icon="📍" title="Ubicación y Categoría" sub="¿Dónde está la propiedad y qué tipo es?"/>
       <div style={{ display:"grid", gap:18 }}>
+
+        {/* País */}
+        <div>
+          <Label req>País</Label>
+          <Sel
+            value={f.pais || "Colombia"}
+            onChange={v => s({ ...f, pais:v, ciudad:"", barrio:"", estrato: v==="Colombia" ? f.estrato : undefined })}
+            options={PAISES}
+            placeholder="Selecciona país"
+          />
+        </div>
+
+        {/* Ciudad */}
         <div>
           <Label req>Ciudad</Label>
           <Sel
             value={f.ciudad}
             onChange={v => s({ ...f, ciudad:v, barrio:"" })}
-            options={CIUDADES}
+            options={ciudades}
             placeholder="Selecciona ciudad"
           />
         </div>
+
+        {/* Zona / Barrio */}
         <div>
-          <Label req>Zona / Barrio</Label>
+          <Label req>Zona / Barrio / Colonia</Label>
           <SearchSelect
             value={f.barrio}
             onChange={v => s({ ...f, barrio:v })}
             options={barrios}
-            placeholder="Escribe el nombre del barrio"
+            placeholder={esColombia ? "Escribe el nombre del barrio" : "Escribe la zona o colonia"}
             disabled={!f.ciudad}
           />
         </div>
-        <GridSel label="Tipo de propiedad *" value={f.tipo} onChange={v => s({...f,tipo:v})} cols={3} items={[
-          {v:"Apartamento",l:"Apartamento",icon:"🏢"},{v:"Casa",l:"Casa",icon:"🏠"},{v:"Lote",l:"Lote",icon:"🌿"},
-          {v:"Comercial",l:"Comercial",icon:"🏪"},{v:"Oficina",l:"Oficina",icon:"💼"},{v:"Bodega",l:"Bodega",icon:"🏭"}
-        ]}/>
+
+        {/* Tipo de propiedad — dropdown */}
         <div>
-          <Label req>Estrato socioeconómico</Label>
-          <div style={{ display:"flex", gap:8 }}>
-            {[1,2,3,4,5,6].map(e => (
-              <div key={e} onClick={() => s({...f,estrato:e})} style={{
-                flex:1, padding:"11px 0", borderRadius:9, textAlign:"center", cursor:"pointer",
-                border:`1px solid ${f.estrato===e ? C.green : C.border}`,
-                background: f.estrato===e ? C.green+"20" : C.bg3,
-                color: f.estrato===e ? C.green : C.gray,
-                fontWeight:700, fontSize:15, transition:"all .2s",
-                boxShadow: f.estrato===e ? `0 0 10px ${C.greenGlow}` : "none"
-              }}>{e}</div>
-            ))}
-          </div>
+          <Label req>Tipo de propiedad</Label>
+          <Sel
+            value={f.tipo}
+            onChange={v => s({...f, tipo:v})}
+            options={TIPOS_PROPIEDAD}
+            placeholder="Selecciona tipo de propiedad"
+          />
         </div>
+
+        {/* Estrato — solo Colombia */}
+        {esColombia && (
+          <div>
+            <Label req>Estrato socioeconómico</Label>
+            <div style={{ display:"flex", gap:8 }}>
+              {[1,2,3,4,5,6].map(e => (
+                <div key={e} onClick={() => s({...f, estrato:e})} style={{
+                  flex:1, padding:"11px 0", borderRadius:9, textAlign:"center", cursor:"pointer",
+                  border:`1px solid ${f.estrato===e ? C.green : C.border}`,
+                  background: f.estrato===e ? C.green+"20" : C.bg3,
+                  color: f.estrato===e ? C.green : C.gray,
+                  fontWeight:700, fontSize:15, transition:"all .2s",
+                  boxShadow: f.estrato===e ? `0 0 10px ${C.greenGlow}` : "none"
+                }}>{e}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
@@ -677,7 +745,7 @@ const Results = ({ form, result, onReset, saved }) => {
       <div style={{ background:`linear-gradient(135deg, ${C.bg2} 0%, ${C.bg3} 100%)`, borderRadius:16, padding:"28px 24px", marginBottom:18, border:`1px solid ${C.green}30`, boxShadow:`0 0 40px ${C.greenGlow}`, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-40, top:-40, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, ${C.green}08, transparent)` }}/>
         <div style={{ fontSize:10, color:C.green, fontWeight:700, letterSpacing:3, textTransform:"uppercase", marginBottom:8 }}>✦ Análisis Comparativo de Mercado · IA</div>
-        <h1 style={{ margin:"0 0 4px", fontSize:22, color:C.white, fontWeight:800 }}>{form.tipo} · {form.barrio}, {form.ciudad}</h1>
+        <h1 style={{ margin:"0 0 4px", fontSize:22, color:C.white, fontWeight:800 }}>{form.tipo} · {form.barrio}, {form.ciudad}{form.pais && form.pais !== "Colombia" ? `, ${form.pais}` : ""}</h1>
         <div style={{ fontSize:12.5, color:C.gray, marginBottom:20 }}>
           {form.areaConstruida}m² · {form.dormitorios||2} hab · {form.banosC||1} baños · Estrato {form.estrato} · {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}
         </div>
@@ -869,7 +937,7 @@ const Results = ({ form, result, onReset, saved }) => {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-const EF = { ciudad:"",barrio:"",tipo:"",estrato:0,areaConstruida:"",areaTerreno:"",antiguedad:"",estado:"",remodelado:"no",remodelAnios:"",remodelAreas:[],dormitorios:2,banosC:1,banosS:0,acabados:"",cocina:"",altTechos:"",balcon:false,balconM2:"",sotano:false,piscina:false,piscinaT:"",gimnasio:false,salon:false,parque:false,sauna:false,ascensor:false,plantaElec:"",seguridad:[],adminM:"",parqueaderos:0,parqT:"",parqAsig:"",proxGastro:"",proxComercio:"",proxTransp:"",orientacion:"",vista:"",calidadV:"",zonaEst:"",precioRef:"",plazo:"",notas:"" }
+const EF = { pais:"Colombia",ciudad:"",barrio:"",tipo:"",estrato:0,areaConstruida:"",areaTerreno:"",antiguedad:"",estado:"",remodelado:"no",remodelAnios:"",remodelAreas:[],dormitorios:2,banosC:1,banosS:0,acabados:"",cocina:"",altTechos:"",balcon:false,balconM2:"",sotano:false,piscina:false,piscinaT:"",gimnasio:false,salon:false,parque:false,sauna:false,ascensor:false,plantaElec:"",seguridad:[],adminM:"",parqueaderos:0,parqT:"",parqAsig:"",proxGastro:"",proxComercio:"",proxTransp:"",orientacion:"",vista:"",calidadV:"",zonaEst:"",precioRef:"",plazo:"",notas:"" }
 
 export default function App() {
   const [phase, setPhase]     = useState(1)
