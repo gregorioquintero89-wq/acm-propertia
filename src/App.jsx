@@ -536,6 +536,9 @@ const PlacesInput = ({ value, onChange, onPlace, pais, placeholder }) => {
       value={value || ""}
       onChange={e => onChange(e.target.value)}
       placeholder={ready ? (placeholder || "Escribe la dirección o barrio...") : "Cargando Google Places..."}
+      autoComplete="off"
+      autoCorrect="off"
+      spellCheck="false"
       style={{
         width:"100%", padding:"11px 14px", borderRadius:8,
         border:`1px solid ${value ? C.green+"60" : C.border}`,
@@ -588,11 +591,16 @@ const P1 = ({ f, s }) => {
             pais={f.pais || "Colombia"}
             placeholder="Ej: El Poblado, Laureles, Av. El Dorado..."
           />
-          {f.ciudad && (
-            <div style={{ fontSize:12, color:C.gray, marginTop:5 }}>
-              📍 {f.ciudad}{f.pais && f.pais !== "Colombia" ? `, ${f.pais}` : ""}
-            </div>
-          )}
+        </div>
+
+        {/* Ciudad — se llena automático con Places o se escribe manual */}
+        <div>
+          <Label req>Ciudad</Label>
+          <Inp
+            value={f.ciudad}
+            onChange={v => s({ ...f, ciudad:v })}
+            placeholder="Se llena al seleccionar barrio, o escribe aquí"
+          />
         </div>
 
         {/* Tipo de propiedad */}
