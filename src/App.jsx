@@ -288,7 +288,7 @@ const SearchSelect = ({ value, onChange, options, placeholder = "Busca barrio...
       <input
         value={disabled ? "" : (query || value || "")}
         onChange={e => { setQuery(e.target.value); setOpen(true) }}
-        onFocus={() => !disabled && setOpen(true)}
+        onFocus={() => { if (!disabled) { if (!query && value) setQuery(value); setOpen(true) } }}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         placeholder={disabled ? "Primero elige ciudad" : placeholder}
         disabled={disabled}
