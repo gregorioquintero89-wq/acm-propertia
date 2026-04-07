@@ -792,7 +792,6 @@ function P4({ f, s }) {
       <PhaseTitle icon="🏊" title="Amenidades y Servicios" sub="Pueden aumentar el valor entre 8% y 20%."/>
       <div style={{ display:"grid", gap:2 }}>
         <Toggle label="🏊 Piscina" value={!!f.piscina} onChange={v => s({...f,piscina:v})}/>
-        {f.piscina && <div style={{ paddingLeft:14, borderLeft:`2px solid ${C.green}`, marginBottom:6, paddingTop:8 }}><Sel value={f.piscinaT} onChange={v => s({...f,piscinaT:v})} options={["Cubierta","Descubierta","Sin fin / Infinity"]} placeholder="Tipo de piscina"/></div>}
         <Toggle label="💪 Gimnasio" value={!!f.gimnasio} onChange={v => s({...f,gimnasio:v})}/>
         <Toggle label="🎉 Salón social / Eventos" value={!!f.salon} onChange={v => s({...f,salon:v})}/>
         <Toggle label="🧒 Parque infantil" value={!!f.parque} onChange={v => s({...f,parque:v})}/>
