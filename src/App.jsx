@@ -266,6 +266,18 @@ Object.keys(BARRIOS).forEach(ciudad => {
 const fmt   = n => new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n)
 const fmtM2 = n => `${new Intl.NumberFormat("es-CO",{maximumFractionDigits:0}).format(n)} /m²`
 
+const DARK_MAP_STYLE = [
+  { elementType:"geometry", stylers:[{color:"#1A1A1A"}] },
+  { elementType:"labels.text.stroke", stylers:[{color:"#1A1A1A"}] },
+  { elementType:"labels.text.fill", stylers:[{color:"#AAAAAA"}] },
+  { featureType:"administrative", elementType:"geometry", stylers:[{color:"#222222"}] },
+  { featureType:"road", elementType:"geometry", stylers:[{color:"#2A2A2A"}] },
+  { featureType:"road", elementType:"labels.text.fill", stylers:[{color:"#777777"}] },
+  { featureType:"poi", elementType:"geometry", stylers:[{color:"#252525"}] },
+  { featureType:"water", elementType:"geometry", stylers:[{color:"#0D1B1A"}] },
+  { featureType:"transit", elementType:"geometry", stylers:[{color:"#1E1E1E"}] },
+]
+
 // ── ATOMS ─────────────────────────────────────────────────────────────────────
 const Card = ({ children, style = {}, glow = false }) => (
   <div style={{
@@ -942,12 +954,100 @@ const Loading = () => {
   )
 }
 
+// ── MAP VIEW ────────────────────────────────────────────────────────────────────
+function MapView({ form, result }) {
+  const mapRef = useRef(null)
+  const [status, setStatus] = useState("loading")
+
+  useEffect(() => {
+    if (!PLACES_KEY) { setStatus("no_key"); return }
+
+    let mapInstance = null
+    let markerInstance = null
+    let infoInstance = null
+
+    loadPlacesScript().then(() => {
+      const geocoder = new window.google.maps.Geocoder()
+      const address = [form.direccion, form.barrio, form.ciudad, form.pais].filter(Boolean).join(", ")
+
+      geocoder.geocode({ address }, (results, gStatus) => {
+        if (gStatus !== "OK" || !results?.[0]) { setStatus("error"); return }
+
+        const loc = results[0].geometry.location
+        mapInstance = new window.google.maps.Map(mapRef.current, {
+          center: loc, zoom: 14,
+          styles: DARK_MAP_STYLE,
+          mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+          backgroundColor: "#0A0A0A",
+        })
+
+        markerInstance = new window.google.maps.Marker({ position: loc, map: mapInstance })
+
+        infoInstance = new window.google.maps.InfoWindow({
+          content: `
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:6px;min-width:180px">
+              <div style="font-size:13px;font-weight:700;color:#00D084;margin-bottom:4px">${form.tipo}</div>
+              <div style="font-size:11px;color:#666;margin-bottom:6px">${form.barrio}, ${form.ciudad}</div>
+              <div style="border-top:1px solid #eee;margin:4px 0;padding-top:6px">
+                <div style="font-size:11px;color:#60A5FA">Inmediato: <strong>${fmt(result.precio_oportunidad)}</strong></div>
+                <div style="font-size:11px;color:#00D084">Mercado: <strong>${fmt(result.precio_mercado)}</strong></div>
+                <div style="font-size:11px;color:#A78BFA">Óptimo: <strong>${fmt(result.precio_aspiracion)}</strong></div>
+              </div>
+            </div>
+          `,
+        })
+        markerInstance.addListener("click", () => infoInstance.open(mapInstance, markerInstance))
+        infoInstance.open(mapInstance, markerInstance)
+        setStatus("ready")
+      })
+    }).catch(() => setStatus("error"))
+
+    return () => {
+      if (infoInstance) infoInstance.close()
+      if (markerInstance) markerInstance.setMap(null)
+    }
+  }, [form, result])
+
+  if (status === "no_key" || status === "error") return null
+
+  if (status === "loading") return (
+    <div style={{ textAlign:"center", padding:"40px 0", color:C.gray }}>
+      <div style={{ position:"relative", width:60, height:60, margin:"0 auto 16px" }}>
+        <div style={{ width:60, height:60, border:`2px solid ${C.border}`, borderTop:`2px solid ${C.green}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+        <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontSize:24 }}>🗺️</div>
+      </div>
+      <p style={{ margin:0, fontSize:14, color:C.grayL }}>Cargando mapa...</p>
+    </div>
+  )
+
+  return (
+    <div>
+      <div ref={mapRef} style={{ width:"100%", height:420, borderRadius:12, overflow:"hidden", border:`1px solid ${C.border}` }} />
+      {result.zonas_precio?.length > 0 && (
+        <div style={{ marginTop:16 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.green, letterSpacing:2, textTransform:"uppercase", marginBottom:12 }}>💰 Precio /m² por Zona</div>
+          <div style={{ display:"grid", gap:6 }}>
+            {result.zonas_precio.map((z, i) => (
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"10px 14px", background:C.bg3, borderRadius:8, border:`1px solid ${C.border}` }}>
+                <span style={{ color: z.zona === form.barrio ? C.green : C.white, fontWeight: z.zona === form.barrio ? 700 : 600, fontSize:13 }}>{z.zona}</span>
+                <span style={{ color: C.gray, fontWeight:700, fontSize:13 }}>
+                  {new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(z.precio)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── RESULTS ───────────────────────────────────────────────────────────────────
 const Results = ({ form, result, onReset, saved }) => {
   const [tab, setTab] = useState("resumen")
   const area = parseFloat(form.areaConstruida) || 90
   const comps = (result.comparables||[]).map(c => ({...c, precioM2: Math.round(c.precio/c.area)}))
-  const TABS = [{id:"resumen",l:"📊 Resumen"},{id:"comparables",l:"🏘️ Comparables"},{id:"graficos",l:"📈 Gráficos"},{id:"precios",l:"💎 Precios"}]
+  const TABS = [{id:"resumen",l:"📊 Resumen"},{id:"comparables",l:"🏘️ Comparables"},{id:"graficos",l:"📈 Gráficos"},{id:"mapa",l:"🗺️ Mapa"},{id:"precios",l:"💎 Precios"}]
 
   const tooltipStyle = { background:C.bg2, border:`1px solid ${C.border}`, borderRadius:9, fontSize:12, color:C.white }
 
@@ -1147,6 +1247,14 @@ const Results = ({ form, result, onReset, saved }) => {
         })()}
       </div>}
 
+      {/* TAB MAPA */}
+      {tab==="mapa" && (
+        <Card>
+          <div style={{ fontSize:10, fontWeight:700, color:C.green, letterSpacing:2, textTransform:"uppercase", marginBottom:16 }}>🗺️ Ubicación y Precios por Zona</div>
+          <MapView form={form} result={result}/>
+        </Card>
+      )}
+
       <div style={{ display:"flex", gap:10, marginTop:22 }}>
         <button onClick={() => window.print()} style={{ flex:2, padding:"14px", borderRadius:12, border:`1px solid ${C.green}`, background:`${C.green}15`, color:C.green, fontWeight:800, fontSize:14, cursor:"pointer" }}>📄 Imprimir / PDF</button>
         <button onClick={onReset} style={{ flex:1, padding:"14px", borderRadius:12, border:`1px solid ${C.border}`, background:"transparent", color:C.gray, fontWeight:700, fontSize:14, cursor:"pointer" }}>🔄 Nuevo</button>
@@ -1156,7 +1264,7 @@ const Results = ({ form, result, onReset, saved }) => {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-const EF = { pais:"Colombia",ciudad:"",barrio:"",tipo:"",estrato:0,areaConstruida:"",areaTerreno:"",antiguedad:"",estado:"",remodelado:"no",remodelAnios:"",remodelAreas:[],dormitorios:2,banosC:1,banosS:0,acabados:"",cocina:"",altTechos:"",balcon:false,balconM2:"",sotano:false,piscina:false,piscinaT:"",gimnasio:false,salon:false,parque:false,sauna:false,ascensor:false,plantaElec:"",seguridad:[],adminM:"",parqueaderos:0,parqT:"",parqAsig:"",proxGastro:"",proxComercio:"",proxTransp:"",orientacion:"",vista:"",calidadV:"",zonaEst:"",precioRef:"",plazo:"",notas:"" }
+const EF = { pais:"Colombia",ciudad:"",barrio:"",tipo:"",estrato:0,areaConstruida:"",areaTerreno:"",antiguedad:"",estado:"",remodelado:"no",remodelAnios:"",remodelAreas:[],dormitorios:2,banosC:1,banosS:0,acabados:"",cocina:"",altTechos:"",balcon:false,balconM2:"",sotano:false,piscina:false,piscinaT:"",gimnasio:false,salon:false,parque:false,sauna:false,ascensor:false,plantaElec:"",seguridad:"",adminM:"",parqueaderos:0,parqT:"",parqAsig:"",proxGastro:"",proxComercio:"",proxTransp:"",orientacion:"",vista:"",calidadV:"",zonaEst:"",precioRef:"",plazo:"",notas:"",lat:null,lng:null }
 
 export default function App() {
   const [phase, setPhase]     = useState(1)

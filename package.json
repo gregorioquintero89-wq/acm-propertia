@@ -6,11 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server/index.js",
+    "postinstall": "npx playwright install chromium 2>/dev/null || true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "node-cron": "^3.0.3",
+    "playwright": "^1.52.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@react-google-maps/api": "^2.19.3",
