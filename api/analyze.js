@@ -51,10 +51,9 @@ export default async function handler(req, res) {
         ciudad:     formData.ciudad,
         barrio:     formData.barrio,
         tipo:       formData.tipo,
-        estrato:    formData.estrato,
         area:       parseFloat(formData.areaConstruida) || null,
         maxResults: 8,
-        render:     false,  // Tiempo real: solo rota IP, más rápido para el usuario
+        render:     false,
       })
       console.log(`[Analyze] Scraped en tiempo real: ${freshComparables.length}`)
     }
@@ -147,19 +146,18 @@ ${comparablesSection}
 
 PROPIEDAD A VALUAR:
 - País: ${pais}
-- Tipo: ${formData.tipo} en ${formData.barrio}, ${formData.ciudad}${formData.estrato ? ` · Estrato ${formData.estrato}` : ""}
+- Tipo: ${formData.tipo} en ${formData.barrio}, ${formData.ciudad}
 - Área construida: ${formData.areaConstruida}m²${formData.areaTerreno ? ` / Terreno: ${formData.areaTerreno}m²` : ""}
 - Antigüedad: ${formData.antiguedad} años · Estado: ${formData.estado}
 - Remodelado: ${formData.remodelado === "si" ? `Sí (${formData.remodelAnios} años, áreas: ${(formData.remodelAreas||[]).join(", ")})` : "No"}
 - ${formData.dormitorios||2} dormitorios · ${formData.banosC||1} baños completos · ${formData.banosS||0} baños sociales
-- Acabados: ${formData.acabados||"estándar"} · Cocina: ${formData.cocina||"N/A"} · Altura techos: ${formData.altTechos||"estándar"}
-- Balcón: ${formData.balcon ? `Sí (${formData.balconM2}m²)` : "No"} · Sótano: ${formData.sotano?"Sí":"No"}
-- Piscina: ${formData.piscina ? `Sí (${formData.piscinaT||""})` : "No"} · Gimnasio: ${formData.gimnasio?"Sí":"No"} · Salón social: ${formData.salon?"Sí":"No"} · Sauna: ${formData.sauna?"Sí":"No"} · Ascensor: ${formData.ascensor?"Sí":"No"}
-- Seguridad: ${formData.seguridad||"Sin seguridad"} · Administración: ${formData.adminM ? `$${parseInt(formData.adminM).toLocaleString("es-CO")}/mes` : "N/A"}
+- Acabados: ${formData.acabados||"estándar"}
+${formData.topografia ? `- Topografía: ${formData.topografia}` : ""}
+${formData.servicios?.length ? `- Servicios: ${formData.servicios.join(", ")}` : ""}
+${formData.altBodega ? `- Altura bodega: ${formData.altBodega}` : ""}
+- Piscina: ${formData.piscina?"Sí":"No"} · Gimnasio: ${formData.gimnasio?"Sí":"No"} · Salón social: ${formData.salon?"Sí":"No"} · Sauna: ${formData.sauna?"Sí":"No"} · Ascensor: ${formData.ascensor?"Sí":"No"}
+- Seguridad: ${formData.seguridad||"Sin seguridad"}${formData.adminM ? ` · Administración: $${parseInt(formData.adminM).toLocaleString("es-CO")}/mes` : ""}
 - Parqueaderos: ${formData.parqueaderos||0}${formData.parqT?` (${formData.parqT})`:""}
-- Vista: ${formData.vista||"N/A"} (calidad: ${formData.calidadV||"N/A"}) · Orientación: ${formData.orientacion||"N/A"}
-- Proximidad: Restaurantes: ${formData.proxGastro||"N/A"} · Comercio: ${formData.proxComercio||"N/A"} · Transporte: ${formData.proxTransp||"N/A"}
-- Zona: ${formData.zonaEst||"N/A"} · Plazo deseado de venta: ${formData.plazo||"N/A"}
 ${formData.precioRef ? `- Precio referencia del propietario: $${parseInt(formData.precioRef).toLocaleString("es-CO")} COP` : ""}
 ${formData.notas ? `- Notas adicionales: ${formData.notas}` : ""}
 

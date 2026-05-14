@@ -933,7 +933,7 @@ const P7 = ({ f, s }) => (
 const Loading = () => {
   const [step, setStep] = useState(0)
   const steps = ["Procesando datos de la propiedad...","Consultando mercado colombiano 2025...","Calculando comparables en la zona...","Generando valoración profesional...","Finalizando análisis..."]
-  useState(() => { const iv = setInterval(() => setStep(s => Math.min(s+1,4)), 1400); return () => clearInterval(iv) })
+  useEffect(() => { const iv = setInterval(() => setStep(s => Math.min(s+1,4)), 1400); return () => clearInterval(iv) }, [])
   return (
     <div style={{ textAlign:"center", padding:"60px 24px" }}>
       <div style={{ position:"relative", width:80, height:80, margin:"0 auto 28px" }}>
@@ -1059,7 +1059,10 @@ const Results = ({ form, result, onReset, saved }) => {
         <div style={{ fontSize:10, color:C.green, fontWeight:700, letterSpacing:3, textTransform:"uppercase", marginBottom:8 }}>✦ Análisis Comparativo de Mercado · IA</div>
         <h1 style={{ margin:"0 0 4px", fontSize:22, color:C.white, fontWeight:800 }}>{form.tipo} · {form.barrio}, {form.ciudad}{form.pais && form.pais !== "Colombia" ? `, ${form.pais}` : ""}</h1>
         <div style={{ fontSize:12.5, color:C.gray, marginBottom:20 }}>
-          {form.areaConstruida}m² · {form.dormitorios||2} hab · {form.banosC||1} baños · Estrato {form.estrato} · {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}
+          {form.areaConstruida || form.areaTerreno || "?"}m²
+          {TIPO_GRUPO[form.tipo] === "residencial" && <> · {form.dormitorios||2} hab · {form.banosC||1} baños</>}
+          {TIPO_GRUPO[form.tipo] !== "terreno" && form.antiguedad && <> · {form.antiguedad} años</>}
+          {" · "}{new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
           <div style={{ background:"rgba(0,208,132,.08)", borderRadius:12, padding:"14px 16px", border:`1px solid ${C.green}20` }}>
@@ -1264,7 +1267,21 @@ const Results = ({ form, result, onReset, saved }) => {
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
-const EF = { pais:"Colombia",ciudad:"",barrio:"",tipo:"",estrato:0,areaConstruida:"",areaTerreno:"",antiguedad:"",estado:"",remodelado:"no",remodelAnios:"",remodelAreas:[],dormitorios:2,banosC:1,banosS:0,acabados:"",cocina:"",altTechos:"",balcon:false,balconM2:"",sotano:false,piscina:false,piscinaT:"",gimnasio:false,salon:false,parque:false,sauna:false,ascensor:false,plantaElec:"",seguridad:"",adminM:"",parqueaderos:0,parqT:"",parqAsig:"",proxGastro:"",proxComercio:"",proxTransp:"",orientacion:"",vista:"",calidadV:"",zonaEst:"",precioRef:"",plazo:"",notas:"",lat:null,lng:null }
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
+
+const EF = {
+  pais:"Colombia", ciudad:"", barrio:"", direccion:"", tipo:"",
+  areaConstruida:"", areaTerreno:"", antiguedad:"", estado:"",
+  remodelado:"no", remodelAnios:"", remodelAreas:[],
+  topografia:"", frenteVia:"", servicios:[],
+  dormitorios:2, banosC:1, banosS:0, acabados:"",
+  altBodega:"", muellesT:"",
+  piscina:false, gimnasio:false, salon:false, parque:false, sauna:false,
+  ascensor:false, plantaElec:"", seguridad:"", adminM:"",
+  parqueaderos:0, parqT:"", parqAsig:"",
+  precioRef:"", notas:"",
+  lat:null, lng:null,
+}
 
 export default function App() {
   const [phase, setPhase]     = useState(1)
@@ -1284,7 +1301,7 @@ export default function App() {
     setLoading(true); setError(null); setSaved(false)
     try {
       // 1. Llamar a Claude AI
-      const res = await fetch("/api/analyze", {
+      const res = await fetch(`${API_BASE}/api/analyze`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ formData: form }),
       })
@@ -1293,7 +1310,7 @@ export default function App() {
       setResult(data)
 
       // 2. Guardar en Supabase (en background)
-      fetch("/api/save-analysis", {
+      fetch(`${API_BASE}/api/save-analysis`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ formData: form, result: data }),
       }).then(r => r.ok && setSaved(true)).catch(console.warn)

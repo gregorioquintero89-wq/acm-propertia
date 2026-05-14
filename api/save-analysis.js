@@ -19,7 +19,6 @@ export default async function handler(req, res) {
         ciudad: formData.ciudad,
         barrio: formData.barrio,
         tipo: formData.tipo,
-        estrato: formData.estrato,
         area_construida: parseFloat(formData.areaConstruida) || null,
         area_terreno: parseFloat(formData.areaTerreno) || null,
         antiguedad: parseInt(formData.antiguedad) || null,
@@ -51,7 +50,6 @@ export default async function handler(req, res) {
         ciudad: formData.ciudad,
         barrio: formData.barrio,
         tipo: formData.tipo,
-        estrato: formData.estrato,
         area: parseFloat(formData.areaConstruida) || null,
         dormitorios: formData.dormitorios || 2,
         banos: formData.banosC || 1,
@@ -77,7 +75,6 @@ export default async function handler(req, res) {
         precio_m2: result.precio_m2_base,
         mes: new Date().toISOString().slice(0, 7), // "2025-03"
         tipo: formData.tipo,
-        estrato: formData.estrato,
       })
 
     if (tendError) console.warn("Error guardando tendencia:", tendError)
