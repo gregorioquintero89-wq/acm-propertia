@@ -1016,41 +1016,43 @@ function MapView({ form, result }) {
   }, [form, result])
 
   return (
-    <div style={{ position:"relative" }}>
-      {status !== "ready" && (
-        <div style={{ position:"absolute", inset:0, zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:C.bg2, borderRadius:12, border:`1px solid ${C.border}`, color:C.gray }}>
-          {status === "no_key" && (
-            <>
-              <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
-              <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>Mapa no disponible</p>
-              <p style={{ fontSize:12, margin:0 }}>Configura <code style={{ color:C.green }}>VITE_GOOGLE_PLACES_KEY</code> para ver la ubicación</p>
-            </>
-          )}
-          {status === "no_address" && (
-            <>
-              <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
-              <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>Ingresa un barrio para ver el mapa</p>
-            </>
-          )}
-          {status === "loading" && (
-            <>
-              <div style={{ position:"relative", width:60, height:60, margin:"0 auto 16px" }}>
-                <div style={{ width:60, height:60, border:`2px solid ${C.border}`, borderTop:`2px solid ${C.green}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
-                <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontSize:24 }}>🗺️</div>
-              </div>
-              <p style={{ margin:0, fontSize:14, color:C.grayL }}>Cargando mapa...</p>
-            </>
-          )}
-          {status === "error" && (
-            <>
-              <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
-              <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>No se pudo cargar el mapa</p>
-              <p style={{ fontSize:12, margin:0 }}>Verifica que la dirección sea correcta</p>
-            </>
-          )}
-        </div>
-      )}
-      <div ref={mapRef} style={{ width:"100%", height:420, borderRadius:12, overflow:"hidden", border:`1px solid ${C.border}`, opacity:status==="ready"?1:0 }} />
+    <div>
+      <div style={{ position:"relative" }}>
+        {status !== "ready" && (
+          <div style={{ position:"absolute", inset:0, zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:C.bg2, borderRadius:12, border:`1px solid ${C.border}`, color:C.gray }}>
+            {status === "no_key" && (
+              <>
+                <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
+                <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>Mapa no disponible</p>
+                <p style={{ fontSize:12, margin:0 }}>Configura <code style={{ color:C.green }}>VITE_GOOGLE_PLACES_KEY</code> para ver la ubicación</p>
+              </>
+            )}
+            {status === "no_address" && (
+              <>
+                <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
+                <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>Ingresa un barrio para ver el mapa</p>
+              </>
+            )}
+            {status === "loading" && (
+              <>
+                <div style={{ position:"relative", width:60, height:60, margin:"0 auto 16px" }}>
+                  <div style={{ width:60, height:60, border:`2px solid ${C.border}`, borderTop:`2px solid ${C.green}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+                  <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", fontSize:24 }}>🗺️</div>
+                </div>
+                <p style={{ margin:0, fontSize:14, color:C.grayL }}>Cargando mapa...</p>
+              </>
+            )}
+            {status === "error" && (
+              <>
+                <div style={{ fontSize:32, marginBottom:8 }}>🗺️</div>
+                <p style={{ fontSize:14, color:C.white, margin:"0 0 4px" }}>No se pudo cargar el mapa</p>
+                <p style={{ fontSize:12, margin:0 }}>Verifica que la dirección sea correcta</p>
+              </>
+            )}
+          </div>
+        )}
+        <div ref={mapRef} style={{ width:"100%", height:420, borderRadius:12, overflow:"hidden", border:`1px solid ${C.border}` }} />
+      </div>
       {result.zonas_precio?.length > 0 && (
         <div style={{ marginTop:16 }}>
           <div style={{ fontSize:10, fontWeight:700, color:C.green, letterSpacing:2, textTransform:"uppercase", marginBottom:12 }}>💰 Precio /m² por Zona</div>
