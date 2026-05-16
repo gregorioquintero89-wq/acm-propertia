@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react"
+import { supabase } from "./lib/supabase"
+import AuthPage from "./AuthPage"
+import OnboardingPage from "./OnboardingPage"
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell,
@@ -1131,7 +1134,7 @@ function MapView({ form, result }) {
 }
 
 // ── RESULTS ───────────────────────────────────────────────────────────────────
-const Results = ({ form, result, onReset, saved }) => {
+const Results = ({ form, result, onReset, saved, user }) => {
   const [tab, setTab] = useState("resumen")
   const area = parseFloat(form.areaConstruida) || 90
   const comps = (result.comparables||[]).map(c => ({...c, precioM2: Math.round(c.precio/c.area)}))
@@ -1144,7 +1147,15 @@ const Results = ({ form, result, onReset, saved }) => {
       {/* Hero */}
       <div style={{ background:`linear-gradient(135deg, ${C.bg2} 0%, ${C.bg3} 100%)`, borderRadius:16, padding:"28px 24px", marginBottom:18, border:`1px solid ${C.green}30`, boxShadow:`0 0 40px ${C.greenGlow}`, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-40, top:-40, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, ${C.green}08, transparent)` }}/>
-        <div style={{ fontSize:10, color:C.green, fontWeight:700, letterSpacing:3, textTransform:"uppercase", marginBottom:8 }}>✦ Análisis Comparativo de Mercado · IA</div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+          <div style={{ fontSize:10, color:C.green, fontWeight:700, letterSpacing:3, textTransform:"uppercase" }}>✦ Análisis Comparativo de Mercado · IA</div>
+          {(user?.user_metadata?.logo_url || user?.user_metadata?.company_name) && (
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              {user.user_metadata.logo_url && <img src={user.user_metadata.logo_url} alt="logo" style={{ height:28, borderRadius:4 }}/>}
+              {user.user_metadata.company_name && <span style={{ fontSize:11, color:C.gray }}>{user.user_metadata.company_name}</span>}
+            </div>
+          )}
+        </div>
         <h1 style={{ margin:"0 0 4px", fontSize:22, color:C.white, fontWeight:800 }}>{form.tipo} · {form.barrio}, {form.ciudad}{form.pais && form.pais !== "Colombia" ? `, ${form.pais}` : ""}</h1>
         <div style={{ fontSize:12.5, color:C.gray, marginBottom:20 }}>
           {form.areaConstruida || form.areaTerreno || "?"}m²
@@ -1583,6 +1594,18 @@ export default function App() {
   const [result, setResult]   = useState(null)
   const [error, setError]     = useState(null)
   const [saved, setSaved]     = useState(false)
+  const [session, setSession] = useState(null)
+  const [user, setUser]       = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s) { setSession(s); setUser(s.user) }
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s); setUser(s?.user || null)
+    })
+    return () => subscription?.unsubscribe()
+  }, [])
 
   const PHASES = [
     <P1 f={form} s={setForm}/>, <P2 f={form} s={setForm}/>, <P3 f={form} s={setForm}/>,
@@ -1605,7 +1628,7 @@ export default function App() {
       // 2. Guardar en Supabase (en background)
       fetch(`${API_BASE}/api/save-analysis`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ formData: form, result: data }),
+        body: JSON.stringify({ formData: form, result: data, userId: user?.id }),
       }).then(r => r.ok && setSaved(true)).catch(console.warn)
 
     } catch(e) {
@@ -1617,7 +1640,25 @@ export default function App() {
 
   const startAnalysis = () => { setView("analysis"); setPhase(1) }
 
-  if (view === "landing") return <LandingPage onStart={startAnalysis}/>
+  const handleAuthSuccess = () => {
+    const u = user
+    if (u?.user_metadata?.company_name) {
+      setView("dashboard")
+    } else {
+      setView("onboarding")
+    }
+  }
+
+  const handleOnboardingComplete = () => setView("dashboard")
+
+  if (view === "landing") return <LandingPage onStart={() => setView("auth")}/>
+  if (view === "auth") return <AuthPage onAuthSuccess={handleAuthSuccess}/>
+  if (view === "onboarding") return <OnboardingPage user={user} onComplete={handleOnboardingComplete}/>
+  if (view === "dashboard") return <div style={{ background:"#f7f9fb", minHeight:"100vh", padding:40, fontFamily:"Inter, sans-serif" }}>
+    <h1>Dashboard</h1>
+    <p>Acá van los análisis recientes</p>
+    <button onClick={startAnalysis} style={{ padding:"12px 24px", background:"#006c49", color:"#fff", border:"none", borderRadius:8, fontSize:16, fontWeight:600, cursor:"pointer" }}>Nuevo Análisis</button>
+  </div>
 
   return (
     <>
@@ -1653,7 +1694,7 @@ export default function App() {
           {error && <div style={{ background:"#FF444415", border:"1px solid #FF444440", borderRadius:12, padding:"12px 16px", marginBottom:16, color:C.red, fontSize:13 }}>⚠️ {error}</div>}
 
           {loading && <Card><Loading/></Card>}
-          {result && !loading && <Results form={form} result={result} onReset={reset} saved={saved}/>}
+          {result && !loading && <Results form={form} result={result} onReset={reset} saved={saved} user={user}/>}
 
           {!loading && !result && (
             <div style={{ animation:"fadeIn .3s ease" }}>

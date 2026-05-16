@@ -28,12 +28,44 @@ app.use(cors({
   ],
   methods: ["GET", "POST"],
 }))
-app.use(express.json({ limit: "2mb" }))
+app.use(express.json({ limit: "10mb" }))
 
 // ── Rutas API ──────────────────────────────────────────────────────────────
 app.post("/api/analyze",         analyzeHandler)
 app.post("/api/save-analysis",   saveAnalysisHandler)
 app.get("/api/cron/update-comparables", updateComparablesHandler)
+
+// ── Upload Logo ────────────────────────────────────────────────────────────
+import { createClient } from "@supabase/supabase-js"
+
+app.post("/api/upload-logo", async (req, res) => {
+  try {
+    const { image_base64, user_id } = req.body
+    if (!image_base64 || !user_id) return res.status(400).json({ error: "Faltan datos" })
+
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+    const base64Data = image_base64.replace(/^data:image\/\w+;base64,/, "")
+    const buffer = Buffer.from(base64Data, "base64")
+    const ext = image_base64.split(";")[0].split("/")[1] || "png"
+    const fileName = `logos/${user_id}/logo.${ext}`
+
+    const { data, error } = await supabase.storage
+      .from("logos")
+      .upload(fileName, buffer, { contentType: `image/${ext}`, upsert: true })
+
+    if (error) {
+      if (error.message?.includes("bucket") || error.message?.includes("not found")) {
+        return res.status(400).json({ error: "El bucket 'logos' no existe. Créalo en Supabase Storage." })
+      }
+      return res.status(500).json({ error: error.message })
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("logos").getPublicUrl(fileName)
+    res.json({ url: publicUrl })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
