@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { supabase } from "./lib/supabase"
 import AuthPage from "./AuthPage"
 import OnboardingPage from "./OnboardingPage"
+import DashboardPage from "./DashboardPage"
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell,
@@ -1134,7 +1135,7 @@ function MapView({ form, result }) {
 }
 
 // ── RESULTS ───────────────────────────────────────────────────────────────────
-const Results = ({ form, result, onReset, saved, user }) => {
+const Results = ({ form, result, onReset, saved, user, onDashboard }) => {
   const [tab, setTab] = useState("resumen")
   const area = parseFloat(form.areaConstruida) || 90
   const comps = (result.comparables||[]).map(c => ({...c, precioM2: Math.round(c.precio/c.area)}))
@@ -1359,6 +1360,7 @@ const Results = ({ form, result, onReset, saved, user }) => {
 
       <div style={{ display:"flex", gap:10, marginTop:22 }}>
         <button onClick={() => window.print()} style={{ flex:2, padding:"14px", borderRadius:12, border:`1px solid ${C.green}`, background:`${C.green}15`, color:C.green, fontWeight:800, fontSize:14, cursor:"pointer" }}>📄 Imprimir / PDF</button>
+        {onDashboard && <button onClick={onDashboard} style={{ flex:1, padding:"14px", borderRadius:12, border:`1px solid ${C.border}`, background:"transparent", color:C.gray, fontWeight:700, fontSize:14, cursor:"pointer" }}>📊 Dashboard</button>}
         <button onClick={onReset} style={{ flex:1, padding:"14px", borderRadius:12, border:`1px solid ${C.border}`, background:"transparent", color:C.gray, fontWeight:700, fontSize:14, cursor:"pointer" }}>🔄 Nuevo</button>
       </div>
     </div>
@@ -1654,11 +1656,12 @@ export default function App() {
   if (view === "landing") return <LandingPage onStart={() => setView("auth")}/>
   if (view === "auth") return <AuthPage onAuthSuccess={handleAuthSuccess}/>
   if (view === "onboarding") return <OnboardingPage user={user} onComplete={handleOnboardingComplete}/>
-  if (view === "dashboard") return <div style={{ background:"#f7f9fb", minHeight:"100vh", padding:40, fontFamily:"Inter, sans-serif" }}>
-    <h1>Dashboard</h1>
-    <p>Acá van los análisis recientes</p>
-    <button onClick={startAnalysis} style={{ padding:"12px 24px", background:"#006c49", color:"#fff", border:"none", borderRadius:8, fontSize:16, fontWeight:600, cursor:"pointer" }}>Nuevo Análisis</button>
-  </div>
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setView("auth")
+  }
+
+  if (view === "dashboard") return <DashboardPage user={user} onNewAnalysis={startAnalysis} onLogout={handleLogout}/>
 
   return (
     <>
@@ -1694,7 +1697,7 @@ export default function App() {
           {error && <div style={{ background:"#FF444415", border:"1px solid #FF444440", borderRadius:12, padding:"12px 16px", marginBottom:16, color:C.red, fontSize:13 }}>⚠️ {error}</div>}
 
           {loading && <Card><Loading/></Card>}
-          {result && !loading && <Results form={form} result={result} onReset={reset} saved={saved} user={user}/>}
+          {result && !loading && <Results form={form} result={result} onReset={reset} saved={saved} user={user} onDashboard={() => { setView("dashboard"); setResult(null) }}/>}
 
           {!loading && !result && (
             <div style={{ animation:"fadeIn .3s ease" }}>
