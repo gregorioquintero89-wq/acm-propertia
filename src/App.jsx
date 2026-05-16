@@ -636,6 +636,61 @@ const PhaseTitle = ({ icon, title, sub }) => (
 )
 
 // ── 7 PHASES ──────────────────────────────────────────────────────────────────
+function LocationMap({ form }) {
+  const mapRef = useRef(null)
+  const [status, setStatus] = useState("idle")
+
+  useEffect(() => {
+    if (!PLACES_KEY || !form.barrio || !form.ciudad) { setStatus("idle"); return }
+
+    setStatus("loading")
+    let mapInstance = null
+    let markerInstance = null
+
+    loadPlacesScript().then(() => {
+      try {
+        const geocoder = new window.google.maps.Geocoder()
+        const address = [form.direccion, form.barrio, form.ciudad, form.pais].filter(Boolean).join(", ")
+
+        geocoder.geocode({ address }, (results, gStatus) => {
+          if (gStatus !== "OK" || !results?.[0]) { setStatus("idle"); return }
+
+          const loc = results[0].geometry.location
+          if (!mapRef.current) return
+
+          mapInstance = new window.google.maps.Map(mapRef.current, {
+            center: loc, zoom: 14,
+            styles: DARK_MAP_STYLE,
+            mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+            backgroundColor: "#0A0A0A",
+          })
+
+          markerInstance = new window.google.maps.Marker({ position: loc, map: mapInstance })
+          setStatus("ready")
+        })
+      } catch (_) { setStatus("idle") }
+    }).catch(() => setStatus("idle"))
+
+    return () => {
+      if (markerInstance) markerInstance.setMap(null)
+    }
+  }, [form.barrio, form.ciudad, form.direccion, form.pais])
+
+  if (!PLACES_KEY) return null
+  if (status === "idle" || !form.barrio || !form.ciudad) return null
+
+  return (
+    <div style={{ position:"relative" }}>
+      {status === "loading" && (
+        <div style={{ position:"absolute", inset:0, zIndex:1, display:"flex", alignItems:"center", justifyContent:"center", background:C.bg2, borderRadius:12, border:`1px solid ${C.border}`, color:C.gray }}>
+          <p style={{ fontSize:13, color:C.grayL }}>Cargando mapa...</p>
+        </div>
+      )}
+      <div ref={mapRef} style={{ width:"100%", height:220, borderRadius:12, overflow:"hidden", border:`1px solid ${C.border}`, opacity:status==="ready"?1:0.4 }} />
+    </div>
+  )
+}
+
 const P1 = ({ f, s }) => {
   return (
     <div>
@@ -653,7 +708,7 @@ const P1 = ({ f, s }) => {
           />
         </div>
 
-        {/* Ciudad — se llena automático con Places o manual */}
+        {/* Ciudad */}
         <div>
           <Label req>Ciudad</Label>
           <Inp
@@ -663,7 +718,7 @@ const P1 = ({ f, s }) => {
           />
         </div>
 
-        {/* Barrio — texto libre */}
+        {/* Barrio */}
         <div>
           <Label req>Barrio</Label>
           <Inp
@@ -682,6 +737,9 @@ const P1 = ({ f, s }) => {
             placeholder="Ej: Cra 43A #7-50, Torre 2 Apto 301"
           />
         </div>
+
+        {/* Mapa de ubicación */}
+        <LocationMap form={f} />
 
         {/* Tipo de propiedad */}
         <div>
