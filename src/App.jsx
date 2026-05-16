@@ -1354,6 +1354,210 @@ const Results = ({ form, result, onReset, saved }) => {
   )
 }
 
+// ── LANDING PAGE ──────────────────────────────────────────────────────────────
+const L = {
+  surface: "#f7f9fb", "surface-dim": "#d8dadc", "surface-bright": "#f7f9fb",
+  "container-lowest": "#ffffff", "container-low": "#f2f4f6", "container": "#eceef0",
+  "container-high": "#e6e8ea", "container-highest": "#e0e3e5",
+  "on-surface": "#191c1e", "on-surface-variant": "#45464d",
+  primary: "#000000", "on-primary": "#ffffff", "primary-container": "#131b2e",
+  secondary: "#006c49", "on-secondary": "#ffffff",
+  "secondary-container": "#6cf8bb",
+  outline: "#76777d", "outline-variant": "#c6c6cd",
+  error: "#ba1a1a", background: "#f7f9fb",
+}
+
+function LandingPage({ onStart }) {
+  const heroStyle = { display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"819px", textAlign:"center", background:L["container-lowest"], overflow:"hidden", position:"relative", padding:"0 32px" }
+  const container = { maxWidth:1440, margin:"0 auto", padding:"0 32px", width:"100%" }
+  const card = { background:L["container-lowest"], borderRadius:12, boxShadow:"0px 4px 20px rgba(15,23,42,0.05)", border:`1px solid ${L["outline-variant"]}` }
+
+  return (
+    <div style={{ background:L.surface, minHeight:"100vh", fontFamily:"Inter, -apple-system, sans-serif" }}>
+      {/* Top Navigation */}
+      <header style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:L["container-lowest"], boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+        <div style={{ ...container, display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:8, paddingBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
+            <span style={{ fontSize:20, fontWeight:700, color:L.primary, letterSpacing:"-0.02em" }}>EstateAnalytix</span>
+            <nav style={{ display:"flex", gap:24, color:L["on-surface-variant"], fontSize:14, fontWeight:500 }}>
+              <a href="#" style={{ color:"inherit", textDecoration:"none" }}>Dashboard</a>
+              <a href="#" style={{ color:"inherit", textDecoration:"none" }}>Market Trends</a>
+              <a href="#" style={{ color:"inherit", textDecoration:"none" }}>Portfolio</a>
+              <a href="#" style={{ color:"inherit", textDecoration:"none" }}>Reports</a>
+            </nav>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+            <button onClick={onStart} style={{ background:L.secondary, color:L["on-secondary"], border:"none", borderRadius:8, padding:"8px 16px", fontSize:14, fontWeight:600, cursor:"pointer", transition:"all .15s" }}>
+              Nuevo Análisis
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main style={{ paddingTop:64 }}>
+        {/* Hero */}
+        <section style={heroStyle}>
+          <div style={{ position:"absolute", inset:0, opacity:0.08, backgroundImage:"radial-gradient(#000 0.5px, transparent 0.5px)", backgroundSize:"24px 24px" }}/>
+          <div style={{ position:"relative", zIndex:1, maxWidth:1200 }}>
+            <h1 style={{ fontSize:56, fontWeight:700, color:L.primary, lineHeight:1.1, margin:"0 0 16px", letterSpacing:"-0.02em" }}>
+              Transforme Datos en <span style={{ color:L.secondary }}>Decisiones Inmobiliarias</span> de Alto Impacto
+            </h1>
+            <p style={{ fontSize:18, color:L["on-surface-variant"], lineHeight:1.6, maxWidth:640, margin:"0 auto 40px" }}>
+              Análisis de mercado en tiempo real, proyecciones de rentabilidad y visualización de tendencias locales para profesionales exigentes.
+            </p>
+            {/* Search bar */}
+            <div style={{ display:"flex", gap:8, alignItems:"center", maxWidth:700, margin:"0 auto", background:L["container-lowest"], borderRadius:12, boxShadow:"0px 4px 20px rgba(15,23,42,0.05)", border:`1px solid ${L["outline-variant"]}`, padding:8 }}>
+              <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, padding:"8px 16px", borderRight:`1px solid ${L["outline-variant"]}` }}>
+                <span style={{ fontSize:20 }}>📍</span>
+                <input placeholder="Ciudad o barrio..." style={{ border:"none", outline:"none", fontSize:16, width:"100%", background:"transparent" }}/>
+              </div>
+              <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, padding:"8px 16px" }}>
+                <span style={{ fontSize:20 }}>🏷️</span>
+                <select style={{ border:"none", outline:"none", fontSize:16, width:"100%", background:"transparent", color:L["on-surface-variant"] }}>
+                  <option>Tipo de propiedad</option>
+                  <option>Residencial</option><option>Comercial</option><option>Industrial</option>
+                </select>
+              </div>
+              <button onClick={onStart} style={{ background:L.primary, color:L["on-primary"], border:"none", borderRadius:8, padding:"12px 24px", fontSize:14, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6 }}>
+                🔍 Analizar Mercado
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Bento Grid */}
+        <section style={{ ...container, paddingTop:64, paddingBottom:64 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(12, 1fr)", gap:16 }}>
+            {/* Chart */}
+            <div style={{ ...card, gridColumn:"span 8", padding:24 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+                <h3 style={{ margin:0, fontSize:20, fontWeight:600 }}>Tendencias de Precio 2024</h3>
+                <span style={{ color:L.secondary, fontSize:12, fontWeight:600, background:L["secondary-container"], padding:"4px 8px", borderRadius:20 }}>+12.4% Anual</span>
+              </div>
+              <div style={{ height:220, background:L["container-low"], borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", color:L["on-surface-variant"], fontSize:14 }}>
+                📈 Gráfico de tendencias
+              </div>
+            </div>
+            {/* Sentiment */}
+            <div style={{ gridColumn:"span 4", background:L.primary, color:L["on-primary"], borderRadius:12, padding:24, display:"flex", flexDirection:"column", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ fontSize:40, marginBottom:16 }}>📊</div>
+                <h3 style={{ margin:"0 0 8px", fontSize:20, fontWeight:600, color:"#fff" }}>Market Sentiment</h3>
+                <p style={{ fontSize:14, color:L["on-primary-container"], margin:0 }}>El sentimiento actual indica una fase de consolidación en sectores prime.</p>
+              </div>
+              <div style={{ marginTop:24, paddingTop:16, borderTop:`1px solid ${L["primary-container"]}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+                  <div>
+                    <div style={{ fontSize:32, fontWeight:700, lineHeight:1 }}>84/100</div>
+                    <p style={{ fontSize:12, color:L["on-primary-container"], margin:"4px 0 0" }}>Score de Confianza</p>
+                  </div>
+                  <span style={{ fontSize:24 }}>📈</span>
+                </div>
+              </div>
+            </div>
+            {/* Hotspots */}
+            <div style={{ ...card, gridColumn:"span 4", padding:24 }}>
+              <h3 style={{ margin:"0 0 16px", fontSize:20, fontWeight:600 }}>Zonas Hotspot</h3>
+              {[{n:"Salamanca, Madrid",r:"4.2%"},{n:"Poblenou, BCN",r:"5.8%"},{n:"Polanco, CDMX",r:"6.1%"}].map((z,i) => (
+                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px", borderRadius:8, cursor:"pointer", marginBottom:4 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:28, height:28, background:i===0?L["secondary-container"]:"#e0e3e5", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:i===0?L.secondary:L["on-surface"] }}>{i+1}</div>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:600 }}>{z.n}</div>
+                      <div style={{ fontSize:12, color:L["on-surface-variant"] }}>Rentabilidad {z.r}</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize:18 }}>↗️</span>
+                </div>
+              ))}
+            </div>
+            {/* Featured Property */}
+            <div style={{ ...card, gridColumn:"span 8", padding:0, overflow:"hidden", position:"relative", minHeight:280 }}>
+              <div style={{ position:"absolute", inset:0, background:`linear-gradient(to top, ${L.primary}E6, transparent)`, zIndex:1 }}/>
+              <div style={{ position:"absolute", bottom:0, left:0, right:0, zIndex:2, padding:24 }}>
+                <span style={{ background:L.secondary, color:L["on-secondary"], padding:"4px 8px", borderRadius:8, fontSize:12, fontWeight:600, display:"inline-block", marginBottom:8 }}>🏆 PROPIEDAD DESTACADA</span>
+                <h3 style={{ margin:"0 0 4px", fontSize:24, fontWeight:600, color:"#fff" }}>Torre Mirador de la Dehesa</h3>
+                <p style={{ margin:0, color:"rgba(255,255,255,0.7)", fontSize:14, maxWidth:400 }}>Análisis de ROI proyectado a 10 años disponible exclusivamente para usuarios Premium.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How it Works */}
+        <section style={{ background:L["container-low"], padding:"64px 0" }}>
+          <div style={{ ...container, textAlign:"center" }}>
+            <h2 style={{ fontSize:32, fontWeight:600, margin:"0 0 16px", letterSpacing:"-0.02em" }}>Potencia tu estrategia con IA</h2>
+            <p style={{ fontSize:18, color:L["on-surface-variant"], maxWidth:560, margin:"0 auto 48px" }}>Nuestro motor de análisis procesa millones de puntos de datos para entregarte una visión clara del futuro inmobiliario.</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:24 }}>
+              {[
+                {icon:"🗄️", title:"Recopilación Masiva", desc:"Integramos datos de catastro, portales públicos, licencias y actividad económica local."},
+                {icon:"📊", title:"Análisis Predictivo", desc:"Algoritmos de aprendizaje que identifican patrones de gentrificación y revalorización."},
+                {icon:"📋", title:"Reporting Dinámico", desc:"Genera informes personalizados con un solo clic listos para presentar a tus clientes."},
+              ].map((item,i) => (
+                <div key={i} style={{ ...card, padding:24, textAlign:"center" }}>
+                  <div style={{ width:48, height:48, background:L.primary, color:L["on-primary"], borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, margin:"0 auto 16px" }}>{item.icon}</div>
+                  <h4 style={{ fontSize:20, fontWeight:600, margin:"0 0 8px" }}>{item.title}</h4>
+                  <p style={{ fontSize:16, color:L["on-surface-variant"], margin:0 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section style={{ ...container, padding:"64px 0" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:40, alignItems:"center" }}>
+            <div>
+              <h2 style={{ fontSize:32, fontWeight:600, margin:"0 0 24px" }}>Lo que dicen los líderes del sector</h2>
+              <div style={{ ...card, padding:24, borderLeft:`4px solid ${L.secondary}` }}>
+                <p style={{ fontSize:18, fontStyle:"italic", margin:"0 0 16px", lineHeight:1.6 }}>"EstateAnalytix nos ha permitido reducir nuestro tiempo de prospección en un 60%. Los datos de rentabilidad por micro-zona son increíblemente precisos."</p>
+                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ width:40, height:40, borderRadius:"50%", background:L["container-high"], display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>👤</div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:14 }}>Javier Méndez</div>
+                    <div style={{ fontSize:12, color:L["on-surface-variant"] }}>Director de Inversión, Global Real State</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display:"none" }}/>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section style={{ ...container, paddingBottom:64 }}>
+          <div style={{ background:L["primary-container"], borderRadius:16, padding:"48px 32px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", inset:0, opacity:0.15, backgroundImage:"linear-gradient(30deg, #565e74 12%, transparent 12.5%), linear-gradient(150deg, #565e74 12%, transparent 12.5%)", backgroundSize:"80px 140px" }}/>
+            <div style={{ position:"relative", zIndex:1 }}>
+              <h2 style={{ fontSize:32, fontWeight:600, margin:"0 0 8px", color:"#fff" }}>¿Listo para dominar el mercado?</h2>
+              <p style={{ fontSize:18, color:L["on-primary-container"], maxWidth:480, margin:"0 auto 24px" }}>Únase a los profesionales que ya están utilizando datos de precisión para asegurar su futuro financiero.</p>
+              <div style={{ display:"flex", gap:16, justifyContent:"center" }}>
+                <button onClick={onStart} style={{ background:L.secondary, color:L["on-secondary"], border:"none", borderRadius:8, padding:"12px 32px", fontSize:14, fontWeight:600, cursor:"pointer" }}>Empezar Análisis</button>
+                <button style={{ background:"transparent", border:`1px solid ${L["outline-variant"]}`, color:"#fff", borderRadius:8, padding:"12px 32px", fontSize:14, fontWeight:600, cursor:"pointer" }}>Contactar con Ventas</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer style={{ borderTop:`1px solid ${L["outline-variant"]}`, padding:"24px 0" }}>
+        <div style={{ ...container, display:"flex", justifyContent:"space-between", alignItems:"center", gap:16 }}>
+          <div>
+            <span style={{ fontSize:18, fontWeight:700, color:L.primary, letterSpacing:"-0.02em" }}>EstateAnalytix</span>
+            <p style={{ fontSize:12, color:L["on-surface-variant"], margin:"4px 0 0" }}>© 2024 EstateAnalytix. All rights reserved.</p>
+          </div>
+          <nav style={{ display:"flex", gap:16 }}>
+            {["Market Insights","API Access","Support","Privacy"].map(l => (
+              <a key={l} href="#" style={{ fontSize:12, color:L["on-surface-variant"], textDecoration:"none" }}>{l}</a>
+            ))}
+          </nav>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
 
@@ -1372,6 +1576,7 @@ const EF = {
 }
 
 export default function App() {
+  const [view, setView]       = useState("landing")
   const [phase, setPhase]     = useState(1)
   const [form, setForm]       = useState({...EF})
   const [loading, setLoading] = useState(false)
@@ -1409,6 +1614,10 @@ export default function App() {
   }
 
   const reset = () => { setPhase(1); setForm({...EF}); setResult(null); setError(null); setSaved(false) }
+
+  const startAnalysis = () => { setView("analysis"); setPhase(1) }
+
+  if (view === "landing") return <LandingPage onStart={startAnalysis}/>
 
   return (
     <>
