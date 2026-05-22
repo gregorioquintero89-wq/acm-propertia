@@ -11,9 +11,9 @@
  *   área   → item.m2Built || item.m2apto || item.m2
  */
 
-const BASE_URL        = "https://fincaraiz.com.co"
-const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
-const USE_PLAYWRIGHT  = process.env.USE_PLAYWRIGHT === "true"
+import { fetchViaScraperAPI } from "./scraper-client.js"
+
+const BASE_URL = "https://fincaraiz.com.co"
 
 const TIPO_SLUG = {
   Apartamento:    "apartamentos",
@@ -39,11 +39,6 @@ const CIUDAD_SLUG = {
   "Manizales":     "manizales",
 }
 
-const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Accept-Language": "es-CO,es;q=0.9",
-}
-
 export async function scrapeFincaRaiz({ ciudad, barrio, tipo, area }) {
   const ciudadSlug = CIUDAD_SLUG[ciudad] || slugify(ciudad)
   const tipoSlug   = TIPO_SLUG[tipo] || "inmuebles"
@@ -51,18 +46,17 @@ export async function scrapeFincaRaiz({ ciudad, barrio, tipo, area }) {
   const searchUrl  = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/${barrioSlug}/`
   const fallbackUrl = `${BASE_URL}/${tipoSlug}/venta/${ciudadSlug}/`
 
-  const modo = USE_PLAYWRIGHT ? "Playwright" : SCRAPER_API_KEY ? "ScraperAPI" : "directo"
-  console.log(`[FincaRaiz] ${modo}: ${searchUrl}`)
+  console.log(`[FincaRaiz] ScraperAPI: ${searchUrl}`)
 
   try {
-    const html = await fetchHtml(searchUrl)
+    const html = await fetchViaScraperAPI(searchUrl)
     const listings = extractListings(html, ciudad, barrio, tipo, area)
     if (listings.length > 0) {
       console.log(`[FincaRaiz] ${listings.length} comparables en ${barrio}, ${ciudad}`)
       return listings
     }
     // Fallback sin barrio
-    const html2 = await fetchHtml(fallbackUrl)
+    const html2 = await fetchViaScraperAPI(fallbackUrl)
     return extractListings(html2, ciudad, barrio, tipo, area)
   } catch (err) {
     console.error(`[FincaRaiz] Error ${ciudad}/${barrio}:`, err.message)

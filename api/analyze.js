@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     console.log(`[Analyze] Llamando a Claude con ${allComparables.length} comparables reales`)
 
     const message = await anthropic.messages.create({
-      model:      "claude-sonnet-4-6",
+      model:      "claude-3-5-sonnet-latest",
       max_tokens: 2500,
       messages:   [{ role: "user", content: prompt }],
     })

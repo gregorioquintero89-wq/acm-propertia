@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import { supabase } from "./lib/supabase"
+import { supabase } from "../../lib/supabase"
 import type { User } from "@supabase/supabase-js"
 
 const S: Record<string, string> = {

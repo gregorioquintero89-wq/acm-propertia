@@ -9,9 +9,9 @@
  * 2. HTML scraping con __NEXT_DATA__ como fallback
  */
 
-const BASE_URL        = "https://www.metrocuadrado.com"
-const SCRAPER_API_KEY = process.env.SCRAPERAPI_KEY
-const USE_PLAYWRIGHT  = process.env.USE_PLAYWRIGHT === "true"
+import { fetchViaScraperAPI } from "./scraper-client.js"
+
+const BASE_URL = "https://www.metrocuadrado.com"
 
 const TIPO_MC = {
   Apartamento:   "Apartamento",
@@ -36,14 +36,17 @@ const HEADERS = {
 export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, area }) {
   const tipoMC = TIPO_MC[tipo] || tipo
 
-  // ── Intento 1: REST API (JSON directo, no necesita JS) ─────────────────
+  // ── Intento 1: REST API via ScraperAPI (JSON) ─────────────────
   try {
     const params = new URLSearchParams({
       realEstateTypeList: tipoMC, realEstateBusinessList: "Venta",
       city: ciudad, rows: "20", from: "0",
     })
     const apiUrl = `${BASE_URL}/rest-search/search?${params}`
-    const data = await fetchJson(apiUrl)
+    console.log(`[MetroCuadrado] ScraperAPI JSON: ${apiUrl}`)
+    
+    const responseText = await fetchViaScraperAPI(apiUrl, { render: false })
+    const data = JSON.parse(responseText)
     const results = data?.results || data?.listings || data?.data || []
 
     if (results.length > 0) {
@@ -59,11 +62,11 @@ export async function scrapeMetroCuadrado({ ciudad, barrio, tipo, area }) {
     console.warn(`[MetroCuadrado] REST API falló: ${err.message}`)
   }
 
-  // ── Intento 2: HTML scraping ──────────────────────────────────────────
+  // ── Intento 2: HTML scraping via ScraperAPI ──────────────────────────
   try {
     const htmlUrl = `${BASE_URL}/inmuebles/venta/${slugify(tipoMC)}/${slugify(ciudad)}/${slugify(barrio)}/`
-    console.log(`[MetroCuadrado] HTML: ${htmlUrl}`)
-    const html = await fetchHtml(htmlUrl)
+    console.log(`[MetroCuadrado] ScraperAPI HTML: ${htmlUrl}`)
+    const html = await fetchViaScraperAPI(htmlUrl, { render: false })
     return extractFromHTML(html, ciudad, barrio, tipo, area)
   } catch (err2) {
     console.error(`[MetroCuadrado] Ambos métodos fallaron ${ciudad}/${barrio}: ${err2.message}`)

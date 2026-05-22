@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { supabase } from "./lib/supabase"
+import { supabase } from "../../lib/supabase"
 
 const S: Record<string, string> = {
   surface: "#f7f9fb",
